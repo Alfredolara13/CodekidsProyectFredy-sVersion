@@ -9,6 +9,11 @@
             try { const t = localStorage.getItem('app-theme'); if (t==='dark'){ document.documentElement.classList.add('theme-dark','dark'); } } catch(_){ }
         </script>
         <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            tailwind.config = {
+                darkMode: 'class'
+            }
+        </script>
            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <link rel="stylesheet" href="../css/style.css">
         <link rel="stylesheet" href="../css/dashboard-enhancements.css">
@@ -16,6 +21,20 @@
         <link rel="stylesheet" href="../css/tareas-enhancements.css">
         <link rel="stylesheet" href="../css/laboratorio-enhancements.css">
         <style>
+            /* ========================================
+               VARIABLES CSS - ALTO CONTRASTE WCAG AA
+               ======================================== */
+            :root {
+                --color-primary-dark: #5B37B7;      /* Morado Oscuro - Tarjetas destacadas */
+                --color-text-high: #222222;          /* Gris Oscuro - Texto principal (Contraste 15.4:1) */
+                --color-text-medium: #4B5563;        /* Gris Medio - Texto secundario (Contraste 8.6:1) */
+                --color-text-low: #6B7280;           /* Gris Suave - Etiquetas (Contraste 5.4:1) */
+                --color-background-light: #FFFFFF;   /* Fondo claro */
+                --color-highlight: #FF8C4B;          /* Naranja - Datos clave */
+                --color-success: #10B981;            /* Verde - Feedback positivo */
+                --color-info: #3B82F6;               /* Azul - Información */
+            }
+
             /* Estilos para marcos de avatar */
             .avatar-frame-none {
                 border: 2px solid transparent !important;
@@ -56,6 +75,25 @@
                     opacity: 1;
                     transform: scale(1) translateY(0);
                 }
+            }
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                }
+                to {
+                    opacity: 1;
+                }
+            }
+            /* Estilos para el modal de grupos */
+            #studentGroupDetailModal {
+                animation: fadeIn 0.3s ease-out;
+                z-index: 9999 !important;
+            }
+            #studentGroupDetailModal > div {
+                animation: modalBounceIn 0.5s ease-out;
+            }
+            #studentGroupDetailModal.hidden {
+                display: none !important;
             }
             @keyframes wave {
                 0%, 100% { transform: rotate(0deg); }
@@ -125,6 +163,29 @@
             .theme-dark .text-gray-700,
             .theme-dark .subtitle {
                 color: #B0B0B0 !important; /* Gris más suave para diferenciación */
+            }
+            
+            /* Información del usuario en el header (modo oscuro) */
+            .theme-dark #userName,
+            .dark #userName {
+                color: #FFFFFF !important; /* Blanco para el nombre del usuario */
+                font-weight: 600;
+            }
+            
+            .theme-dark #userRole,
+            .dark #userRole {
+                color: #D1D5DB !important; /* Gris claro para el rol */
+            }
+            
+            .theme-dark #profileInfo,
+            .dark #profileInfo {
+                background: rgba(255, 255, 255, 0.05);
+                border-radius: 8px;
+            }
+            
+            .theme-dark #profileInfo:hover,
+            .dark #profileInfo:hover {
+                background: rgba(255, 255, 255, 0.1);
             }
             
             /* Texto extra claro para elementos importantes */
@@ -249,6 +310,20 @@
                 color: #6b7280 !important; /* Gris medio para subtítulos */
             }
             
+            /* ============ THEME TOGGLE STYLES (Homepage Design) ============ */
+            .theme-toggle { background: transparent; border: none; cursor: pointer; display:flex; align-items:center; gap:8px; padding: 6px; border-radius: 8px; transition: background 0.2s ease; }
+            .theme-toggle:hover { background: rgba(0, 0, 0, 0.05); }
+            .theme-dark .theme-toggle:hover { background: rgba(255, 255, 255, 0.1); }
+            .theme-toggle .icon-sun, .theme-toggle .icon-moon { font-size: 18px; line-height:1; transition: opacity 0.2s ease; }
+            .toggle-switch { width:44px; height:24px; background:#E6E6E6; border-radius:999px; position:relative; display:inline-block; transition: background 0.3s ease; }
+            .toggle-thumb { width:20px; height:20px; background:#fff; border-radius:50%; position:absolute; top:2px; left:2px; box-shadow:0 6px 14px rgba(0,0,0,0.12); transition:transform 220ms cubic-bezier(.2,.9,.2,1); }
+            .theme-on .toggle-switch { background: linear-gradient(90deg,#8B39FF,#6EC6FF); }
+            .theme-on .toggle-thumb { transform: translateX(20px); }
+            .theme-on .icon-sun { opacity:0.2; }
+            .theme-off .icon-moon { opacity:0.2; }
+            .theme-toggle:focus-visible { outline: 3px solid rgba(111,66,193,0.12); border-radius: 8px; }
+            .dark .toggle-switch { background:#374151; }
+            
             /* Cards mantienen sus colores originales en modo claro */
             body:not(.dark) .stat-card-enhanced {
                 /* Los gradientes se mantienen de dashboard-enhancements.css */
@@ -271,8 +346,10 @@
     <header id="mainHeader" class="bg-white shadow-md fixed top-0 left-0 right-0 z-50">
         <div class="flex items-center justify-between px-6 py-4">
             <!-- Logo -->
-            <div class="flex items-center space-x-2">
-                <span class="text-xl font-extrabold text-gray-800">Code Kids</span>
+            <div class="flex items-center space-x-3">
+                <a href="../index.html" class="text-3xl font-extrabold tracking-tight no-underline hover:opacity-90" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                    Code Kids
+                </a>
             </div>
 
             <!-- Búsqueda Inteligente -->
@@ -303,10 +380,15 @@
             <div class="flex items-center space-x-3">
                 <!-- Nivel y XP -->
                 <div class="hidden md:flex flex-col items-end">
-                    <div class="flex items-center space-x-1">
+                    <div class="flex items-center space-x-2">
                             <div class="level-badge-enhanced cursor-pointer hover:scale-105 transition-transform" id="userLevel" style="padding: 6px 16px; font-size: 0.9rem;" title="Ver progreso de nivel">
                             <span class="level-star" style="font-size: 1rem;" aria-hidden="true"></span>
                             <span>Nivel 1</span>
+                        </div>
+                        <!-- Badge de Racha -->
+                        <div class="streak-badge-header cursor-pointer hover:scale-105 transition-transform" id="streakBadge" title="Ver tu racha">
+                            <span class="streak-flame-mini">🔥</span>
+                            <span id="streakDaysHeader">0</span>
                         </div>
                     </div>
                     <div class="w-40 mt-1">
@@ -327,7 +409,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
                         </svg>
                         <!-- Badge contador -->
-                        <span id="notificationBadge" class="hidden absolute -top-1 -right-1 min-w-[20px] h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center px-1.5 shadow-lg">0</span>
+                        <span id="notificationBadge" class="absolute -top-1 -right-1 min-w-[20px] h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center px-1.5 shadow-lg">0</span>
                     </button>
                 </div>
 
@@ -441,14 +523,11 @@
                     </div>
                 </div>
 
-                <!-- Botón de Tema Claro/Oscuro -->
-                <button id="themeToggle" class="p-1.5 hover:bg-gray-100 rounded-lg transition cursor-pointer" title="Cambiar tema" style="cursor: pointer;">
-                    <svg id="themeIconLight" class="w-5 h-5 text-gray-700 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                    </svg>
-                    <svg id="themeIconDark" class="w-5 h-5 text-gray-700 hidden pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
-                    </svg>
+                <!-- Botón de Tema Claro/Oscuro (Homepage Design) -->
+                <button id="themeToggle" class="theme-toggle theme-off" aria-pressed="false" title="Alternar modo claro/oscuro">
+                    <span class="icon-sun" aria-hidden="true">☀️</span>
+                    <div class="toggle-switch" aria-hidden="true"><span class="toggle-thumb"></span></div>
+                    <span class="icon-moon" aria-hidden="true">🌙</span>
                 </button>
 
                 <!-- Perfil -->
@@ -474,7 +553,7 @@
     <div class="flex pt-16" style="min-height: calc(100vh - 4rem);">
         
         <!-- Sidebar -->
-        <aside class="sidebar w-64 fixed left-0 h-full overflow-y-auto bg-white shadow-lg" style="top: 4rem;">
+        <aside class="sidebar w-64 fixed left-0 bg-white shadow-lg" style="top: 4rem; height: calc(100vh - 4rem); overflow-y: scroll;">
             <div class="p-4">
                 <nav class="space-y-1">
                     <a href="#inicio" class="sidebar-item active" data-route="inicio">
@@ -495,7 +574,7 @@
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
                         </svg>
-                        <span>Tareas</span>
+                        <span>Misiones</span>
                     </a>
 
                     <a href="#laboratorio" class="sidebar-item" data-route="laboratorio">
@@ -509,7 +588,7 @@
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                         </svg>
-                        <span>Mi Colección</span>
+                        <span>MiniCoders</span>
                     </a>
 
                     <a href="#grupos" class="sidebar-item" data-route="grupos">
@@ -524,30 +603,22 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
                         </svg>
                         <span>Chats</span>
-                        <span id="chatBadge" class="hidden ml-auto badge badge-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">0</span>
+                        <span id="chatBadge" class="ml-auto badge badge-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">0</span>
                     </a>
 
-                    <a href="#racha" class="sidebar-item" data-route="racha">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"></path>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z"></path>
-                        </svg>
-                        <span>Racha</span>
-                    </a>
                 </nav>
 
-                <!-- Widget de Racha en Sidebar -->
-                <div class="streak-widget-enhanced">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="flex items-center gap-2">
-                            <span class="streak-flame">🔥</span>
-                            <span class="font-bold text-lg">Racha</span>
-                        </div>
-                        <div class="streak-number" id="streakDays">0</div>
+                <!-- Widget de MiniCoder Equipado en Sidebar -->
+                <div class="equipped-minicoder-widget">
+                    <div class="text-center mb-3">
+                        <span class="text-xs font-bold text-purple-600 uppercase tracking-wide">Compañero de aventuras</span>
                     </div>
-                    <div class="text-sm opacity-90 mb-2">¡Estás encendido! Sigue así</div>
-                    <div class="streak-progress-bar">
-                        <div class="streak-progress-fill" style="width: 0%" id="streakProgress"></div>
+                    <div id="equippedMiniCoderCard" class="minicoder-widget-card">
+                        <!-- El MiniCoder equipado se cargará aquí -->
+                        <div class="text-center py-4 text-sm text-gray-400">
+                            <p>No hay MiniCoder equipado</p>
+                            <p class="text-xs mt-1">Ve a MiniCoders para equipar uno</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -580,26 +651,8 @@
                                     <p class="text-sm font-semibold opacity-90 uppercase">Lecciones Completadas</p>
                                     <p id="statsLessons" class="text-5xl font-bold mt-2">0</p>
                                 </div>
-                                <div class="stat-icon-lecciones text-5xl" aria-hidden="true">
-                                    <!-- Cohete de Aprendizaje 🚀: Diseño profesional y llamativo -->
-                                    <svg class="stat-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                        <!-- Cuerpo del cohete -->
-                                        <path d="M12 2L8 6v8l4 4 4-4V6z"/>
-                                        <!-- Ventana del cohete -->
-                                        <circle cx="12" cy="10" r="2" fill="white" stroke="white"/>
-                                        <!-- Aletas izquierda y derecha -->
-                                        <path d="M8 10L6 14l2 2"/>
-                                        <path d="M16 10l2 4-2 2"/>
-                                        <!-- Llamas del cohete -->
-                                        <path d="M10 18v3" stroke-width="3"/>
-                                        <path d="M12 18v4" stroke-width="3"/>
-                                        <path d="M14 18v3" stroke-width="3"/>
-                                        <!-- Detalles de velocidad -->
-                                        <path d="M5 8h2" stroke-width="2"/>
-                                        <path d="M4 11h2" stroke-width="2"/>
-                                        <path d="M17 8h2" stroke-width="2"/>
-                                        <path d="M18 11h2" stroke-width="2"/>
-                                    </svg>
+                                <div class="stat-icon-lecciones" aria-hidden="true" style="width: 64px; height: 64px;">
+                                    <img src="../images/icons/teacher.png" alt="Profesor enseñando" style="width: 100%; height: 100%; object-fit: contain;">
                                 </div>
                             </div>
                             <div class="mt-4">
@@ -616,25 +669,8 @@
                                     <p class="text-sm font-semibold opacity-90 uppercase">Juegos Jugados</p>
                                     <p id="statsGames" class="text-5xl font-bold mt-2">0</p>
                                 </div>
-                                <div class="stat-icon-juegos text-5xl" aria-hidden="true">
-                                    <!-- Mando de Batalla Estilizado 🎮: Control con energía -->
-                                    <svg class="stat-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                        <!-- Cuerpo del control -->
-                                        <path d="M6 11c-1.5 0-2.5 1-2.5 2.5v2c0 1.5 1 2.5 2.5 2.5h2c1 0 1.5-.5 2-1.5l2-4c.5-1 1-1.5 2-1.5h2c1.5 0 2.5 1 2.5 2.5v2c0 1.5-1 2.5-2.5 2.5h-2"/>
-                                        <!-- Cruz direccional izquierda -->
-                                        <path d="M7 14h2"/>
-                                        <path d="M8 13v2"/>
-                                        <!-- Botones derecha -->
-                                        <circle cx="16" cy="13" r="1" fill="white"/>
-                                        <circle cx="18" cy="15" r="1" fill="white"/>
-                                        <!-- Escudo de batalla (fondo) -->
-                                        <path d="M12 3v3" stroke-width="2"/>
-                                        <path d="M8 4l2 2" stroke-width="2"/>
-                                        <path d="M16 4l-2 2" stroke-width="2"/>
-                                        <!-- Líneas de energía -->
-                                        <path d="M3 9l2 1" stroke-width="1.5" opacity="0.7"/>
-                                        <path d="M21 9l-2 1" stroke-width="1.5" opacity="0.7"/>
-                                    </svg>
+                                <div class="stat-icon-juegos" aria-hidden="true" style="width: 64px; height: 64px;">
+                                    <img src="../images/icons/gamepad.png" alt="Gamepad" style="width: 100%; height: 100%; object-fit: contain;">
                                 </div>
                             </div>
                             <div class="mt-4">
@@ -651,26 +687,8 @@
                                     <p class="text-sm font-semibold opacity-90 uppercase">Marcos Desbloqueados</p>
                                     <p id="statsFrames" class="text-5xl font-bold mt-2">0/5</p>
                                 </div>
-                                <div class="stat-icon-marcos text-5xl" aria-hidden="true">
-                                    <!-- Tesoro Desbloqueado 🗝️: Cofre con destello brillante -->
-                                    <svg class="stat-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                        <!-- Base del cofre -->
-                                        <rect x="4" y="12" width="16" height="8" rx="2"/>
-                                        <!-- Tapa del cofre -->
-                                        <path d="M4 12V10c0-1 1-2 2-2h12c1 0 2 1 2 2v2"/>
-                                        <!-- Cerradura central -->
-                                        <rect x="11" y="14" width="2" height="3" rx="0.5"/>
-                                        <circle cx="12" cy="14" r="1.5" fill="white"/>
-                                        <!-- Llave dorada (parte superior) -->
-                                        <circle cx="12" cy="5" r="2" stroke-width="2.5"/>
-                                        <path d="M12 7v1" stroke-width="2.5"/>
-                                        <!-- Destellos brillantes -->
-                                        <path d="M7 6l-1.5-1.5" stroke-width="2" opacity="0.8"/>
-                                        <path d="M17 6l1.5-1.5" stroke-width="2" opacity="0.8"/>
-                                        <path d="M12 2v2" stroke-width="2" opacity="0.8"/>
-                                        <path d="M5 10l-2-1" stroke-width="1.5" opacity="0.6"/>
-                                        <path d="M19 10l2-1" stroke-width="1.5" opacity="0.6"/>
-                                    </svg>
+                                <div class="stat-icon-marcos" aria-hidden="true" style="width: 64px; height: 64px;">
+                                    <img src="../images/icons/trophy.png" alt="Trofeo" style="width: 100%; height: 100%; object-fit: contain;">
                                 </div>
                             </div>
                             <div class="mt-4">
@@ -684,28 +702,8 @@
                                     <p class="text-sm font-semibold opacity-90 uppercase">Tiempo Total</p>
                                     <p id="statsTime" class="text-5xl font-bold mt-2">00:00</p>
                                 </div>
-                                <div class="stat-icon-tiempo text-5xl" aria-hidden="true">
-                                    <!-- Portal de Tiempo ⌛: Portal circular con líneas de velocidad -->
-                                    <svg class="stat-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                        <!-- Portal exterior -->
-                                        <circle cx="12" cy="12" r="9"/>
-                                        <!-- Portal interior (energía) -->
-                                        <circle cx="12" cy="12" r="6" stroke-width="2"/>
-                                        <!-- Reloj de arena estilizado -->
-                                        <path d="M12 8v8" stroke-width="3"/>
-                                        <path d="M10 9l2-1 2 1" fill="white"/>
-                                        <path d="M10 15l2 1 2-1" fill="white"/>
-                                        <!-- Líneas de velocidad (movimiento) -->
-                                        <path d="M2 12h3" stroke-width="2" opacity="0.7"/>
-                                        <path d="M19 12h3" stroke-width="2" opacity="0.7"/>
-                                        <path d="M5 7l2 2" stroke-width="2" opacity="0.6"/>
-                                        <path d="M17 17l2 2" stroke-width="2" opacity="0.6"/>
-                                        <path d="M5 17l2-2" stroke-width="2" opacity="0.6"/>
-                                        <path d="M17 7l2-2" stroke-width="2" opacity="0.6"/>
-                                        <!-- Partículas de energía -->
-                                        <circle cx="12" cy="4" r="1" fill="white" opacity="0.8"/>
-                                        <circle cx="12" cy="20" r="1" fill="white" opacity="0.8"/>
-                                    </svg>
+                                <div class="stat-icon-tiempo" aria-hidden="true" style="width: 64px; height: 64px;">
+                                    <img src="../images/icons/timer.png" alt="Cronómetro" style="width: 100%; height: 100%; object-fit: contain;">
                                 </div>
                             </div>
                             <div class="mt-4">
@@ -755,10 +753,10 @@
                         </div>
                     </div>
 
-                    <!-- Próximas Tareas -->
+                    <!-- Próximas Misiones -->
                     <div class="card">
                             <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                            Actividad Tareas
+                            Actividad Misiones
                         </h2>
                         <div id="upcomingTasks" class="space-y-3 text-sm">
                             <div class="empty-tasks-message">
@@ -772,7 +770,7 @@
                                     </svg>
                                 </div>
                                 <p class="font-bold text-lg mt-2">¡Buen trabajo, explorador!</p>
-                                <p class="text-sm mt-2">Tus próximas tareas aparecerán pronto</p>
+                                <p class="text-sm mt-2">Tus próximas misiones aparecerán pronto</p>
                                 <p class="text-sm mt-1">¡Explora nuevas lecciones mientras esperas!</p>
                             </div>
                         </div>
@@ -1613,7 +1611,7 @@
                         <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                         </svg>
-                        Mi Colección de Robots
+                        MiniCoders
                     </h2>
                     <p class="text-gray-600">Colecciona robots únicos completando lecciones y desafíos. ¡Desbloquea cofres especiales!</p>
                 </div>
@@ -1702,52 +1700,218 @@
 
             <!-- Sección GRUPOS -->
             <section id="section-grupos" class="hidden" data-section>
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-2xl font-bold flex items-center gap-2 section-title">Mis Grupos</h2>
-                    <button id="btnNewPost" class="btn btn-primary">Nuevo Post</button>
+                <!-- Header -->
+                <div class="flex items-center justify-between mb-6">
+                    <h1 class="text-3xl font-bold text-gray-800 flex items-center gap-3">
+                        <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"></path>
+                        </svg>
+                        Mis Grupos
+                    </h1>
+                    <button id="btnNuevoPost" class="hidden bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold px-6 py-3 rounded-xl flex items-center gap-2 shadow-lg transition-all transform hover:scale-105">
+                        <span class="text-xl">✏️</span>
+                        Nuevo Post
+                    </button>
                 </div>
                 
-                <!-- Formulario para nuevo post -->
-                <div id="newPostForm" class="hidden card mb-4 p-4">
-                    <textarea id="newPostContent" class="form-input mb-2" rows="3" placeholder="¿Qué quieres compartir con tu grupo?"></textarea>
-                    <div class="flex gap-2">
-                        <button id="submitPost" class="btn btn-primary">Publicar</button>
-                        <button id="cancelPost" class="btn bg-gray-300 hover:bg-gray-400">Cancelar</button>
-                    </div>
-                </div>
-                
-                <!-- Feed de posts -->
-                <div id="groupsFeed" class="space-y-4">
-                    <div class="text-center text-gray-400 py-8">Cargando posts...</div>
-                </div>
-            </section>
-
-            <!-- Modal de perfil de usuario -->
-            <div id="userProfileModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-                <div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full mx-4">
-                    <div class="flex justify-between items-start mb-4">
-                        <h3 class="text-xl font-bold">Perfil de Usuario</h3>
-                        <button id="closeProfileModal" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
-                    </div>
-                    <div class="flex items-center gap-4 mb-4">
-                        <img id="modalUserAvatar" class="w-20 h-20 rounded-full" alt="Avatar">
-                        <div>
-                            <div id="modalUserName" class="text-lg font-bold"></div>
-                            <div id="modalUserRole" class="text-sm text-gray-500"></div>
+                <!-- Vista de lista de grupos -->
+                <div id="gruposListView">
+                    <div id="studentGroupsGrid" class="space-y-4">
+                        <div class="text-center text-gray-400 py-12">
+                            <div class="text-6xl mb-4">📚</div>
+                            <p class="text-lg mb-2">Cargando tus grupos...</p>
                         </div>
                     </div>
-                    <div class="flex gap-2">
-                        <button id="modalChatBtn" class="btn btn-primary flex-1">Enviar Mensaje</button>
+                </div>
+                
+                <!-- Vista detallada del grupo -->
+                <div id="grupoDetailView" class="hidden">
+                    <!-- Header del grupo -->
+                    <div class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-8 mb-6 text-white shadow-xl">
+                        <button id="btnVolverGrupos" class="mb-4 flex items-center gap-2 text-white/90 hover:text-white transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                            </svg>
+                            <span>Volver</span>
+                        </button>
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <h2 id="grupoDetailNombre" class="text-4xl font-bold mb-2"></h2>
+                                <p id="grupoDetailMateria" class="text-xl opacity-90 mb-3"></p>
+                                <div class="flex items-center gap-4 text-sm">
+                                    <span class="flex items-center gap-1">
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"></path>
+                                        </svg>
+                                        <span id="grupoDetailProfesor"></span>
+                                    </span>
+                                    <span>•</span>
+                                    <span id="grupoDetailEstudiantes"></span>
+                                </div>
+                            </div>
+                            <span id="grupoDetailBadge" class="px-4 py-2 bg-white/20 rounded-full text-sm font-semibold backdrop-blur-sm"></span>
+                        </div>
+                    </div>
+                    
+                    <!-- Campo para publicar -->
+                    <div class="bg-gradient-to-r from-indigo-100 to-purple-100 rounded-2xl p-6 mb-6 shadow-md">
+                        <div class="flex gap-4">
+                            <img id="userAvatarPost" src="https://ui-avatars.com/api/?name=User&background=667eea&color=fff" class="w-12 h-12 rounded-full shadow-md" alt="Avatar">
+                            <div class="flex-1">
+                                <textarea id="postTextarea" class="w-full p-4 rounded-xl border-2 border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none resize-none" rows="3" placeholder="Comparte algo con el grupo..."></textarea>
+                                <div class="flex justify-end mt-3">
+                                    <button id="btnPublicar" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold px-6 py-2.5 rounded-xl flex items-center gap-2 shadow-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed">
+                                        <span class="text-lg">📄</span>
+                                        Publicar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Feed de publicaciones -->
+                    <div id="grupoFeed" class="space-y-4">
+                        <!-- Las publicaciones se cargarán aquí dinámicamente -->
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Modal Detalle de Grupo (Estudiante) -->
+            <div id="studentGroupDetailModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" style="z-index: 9999;">
+                <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden border-4 border-purple-200" onclick="event.stopPropagation()">
+                    <div class="sticky top-0 bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-6 shadow-lg">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <h2 id="studentGroupDetailName" class="text-3xl font-bold mb-2 drop-shadow-md"></h2>
+                                <div class="flex items-center gap-4 text-sm font-medium opacity-95">
+                                    <span id="studentGroupDetailSubject" class="font-semibold px-3 py-1 bg-white/20 rounded-full backdrop-blur-sm"></span>
+                                    <span>•</span>
+                                    <span id="studentGroupDetailLevel" class="px-3 py-1 bg-white/20 rounded-full backdrop-blur-sm"></span>
+                                </div>
+                            </div>
+                            <button id="closeStudentGroupDetailModal" class="text-white hover:bg-white/20 rounded-lg p-2 text-3xl font-bold transition-colors">×</button>
+                        </div>
+                    </div>
+
+                    <div class="p-6 space-y-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+                        <!-- Maestro Asignado - Alto Contraste -->
+                        <div class="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-xl p-6 shadow-xl border-2 border-purple-500">
+                            <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                                <span class="text-2xl">👨‍🏫</span>
+                                Maestro Asignado
+                            </h3>
+                            <div id="studentGroupTeacher" class="flex items-center gap-4">
+                                <div class="text-center text-white text-sm">Cargando...</div>
+                            </div>
+                        </div>
+
+                        <!-- Información del Grupo - Alto Contraste -->
+                        <div>
+                            <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: var(--color-text-high);">
+                                <span class="text-xl">📋</span>
+                                Información del Grupo
+                            </h3>
+                            <div class="bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-5 grid grid-cols-2 gap-4 border border-gray-200 shadow-sm">
+                                <div class="flex items-center gap-3 bg-white rounded-lg p-3 shadow-sm">
+                                    <div class="w-12 h-12 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-md">
+                                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs font-medium mb-1" style="color: var(--color-text-low);">Periodo</div>
+                                        <div id="studentGroupDetailPeriod" class="font-bold text-base" style="color: var(--color-text-high);"></div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-3 bg-white rounded-lg p-3 shadow-sm">
+                                    <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-md">
+                                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs font-medium mb-1" style="color: var(--color-text-low);">Compañeros</div>
+                                        <div id="studentGroupDetailStudentCount" class="font-bold text-base" style="color: var(--color-highlight);"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Compañeros de Grupo - Alto Contraste -->
+                        <div>
+                            <h3 class="text-lg font-bold mb-4 flex items-center gap-2" style="color: var(--color-text-high);">
+                                <span class="text-xl">👥</span>
+                                Compañeros de tu Grupo
+                            </h3>
+                            <div id="studentGroupClassmates" class="space-y-3 max-h-72 overflow-y-auto bg-gradient-to-br from-gray-50 to-purple-50 rounded-xl p-4 border border-gray-200">
+                                <div class="text-center text-sm py-6" style="color: var(--color-text-medium);">Cargando compañeros...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal de Racha -->
+            <div id="streakModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" style="z-index: 9999;">
+                <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden border-4 border-orange-200" onclick="event.stopPropagation()">
+                    <div class="sticky top-0 bg-gradient-to-r from-orange-500 to-red-500 text-white p-6 shadow-lg">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <h2 class="text-3xl font-bold mb-2 drop-shadow-md flex items-center gap-3">
+                                    <span class="text-4xl animate-bounce">🔥</span>
+                                    Tu Racha de Estudio
+                                </h2>
+                                <p class="text-white/90 text-sm">¡Mantén tu racha activa estudiando todos los días!</p>
+                            </div>
+                            <button id="closeStreakModal" class="text-white hover:bg-white/20 rounded-lg p-2 text-3xl font-bold transition-colors">×</button>
+                        </div>
+                    </div>
+
+                    <div class="p-6 space-y-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+                        <!-- Estadísticas Principales -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-6 text-center border-2 border-orange-300 shadow-md">
+                                <div class="text-5xl mb-2">🔥</div>
+                                <div class="text-3xl font-bold text-orange-600 mb-1" id="currentStreakModal">0</div>
+                                <div class="text-sm font-medium text-gray-600">Días consecutivos</div>
+                            </div>
+                            <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 text-center border-2 border-purple-300 shadow-md">
+                                <div class="text-5xl mb-2">🏆</div>
+                                <div class="text-3xl font-bold text-purple-600 mb-1" id="maxStreakModal">0</div>
+                                <div class="text-sm font-medium text-gray-600">Mejor racha</div>
+                            </div>
+                        </div>
+
+                        <!-- Calendario de Racha -->
+                        <div class="bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl p-6 border border-gray-200">
+                            <h3 class="text-lg font-bold mb-4 text-gray-800 flex items-center gap-2">
+                                <span>📅</span>
+                                Calendario de Actividad
+                            </h3>
+                            <div id="streakCalendarModal" class="grid grid-cols-7 gap-2"></div>
+                        </div>
+
+                        <!-- Mensaje Motivacional -->
+                        <div class="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-5 border-l-4 border-orange-400">
+                            <div class="flex items-start gap-3">
+                                <span class="text-3xl">💡</span>
+                                <div>
+                                    <h4 class="font-bold text-gray-800 mb-1">¡Sigue así!</h4>
+                                    <p class="text-sm text-gray-600">Estudiar todos los días te ayuda a mejorar tus habilidades de programación. ¡No rompas tu racha!</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- Sección CHATS -->
             <section id="section-chats" class="hidden" data-section>
-                <div class="grid lg:grid-cols-4 gap-4 h-full" style="min-height: 60vh;">
+                <div id="chatContainer" class="grid lg:grid-cols-4 gap-4">
                     <!-- Lista de Conversaciones -->
-                    <div class="lg:col-span-1 card p-0 flex flex-col">
-                        <div class="p-3 border-b text-xs font-semibold text-gray-500 flex items-center justify-between">
+                    <div id="chatContactsPanel" class="lg:col-span-1 card p-0 flex flex-col" style="height: calc(100vh - 180px); position: sticky; top: 100px;">
+                        <!-- Header fijo -->
+                        <div class="p-3 border-b text-xs font-semibold text-gray-500 flex items-center justify-between flex-shrink-0 bg-white sticky top-0 z-10">
                             <span>Mensajes</span>
                             <button id="newChatBtn" class="text-indigo-600 hover:text-indigo-800" title="Nuevo chat" onclick="showNewChatModal && showNewChatModal()">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1755,13 +1919,14 @@
                                 </svg>
                             </button>
                         </div>
-                        <div id="chatConversations" class="flex-1 overflow-y-auto">
+                        <!-- Lista scrollable -->
+                        <div id="chatConversations" class="flex-1 overflow-y-auto overflow-x-hidden">
                             <!-- Conversaciones cargadas dinámicamente -->
                         </div>
                     </div>
                     
                     <!-- Área de Mensajes -->
-                    <div class="lg:col-span-3 card p-0 flex flex-col">
+                    <div id="chatMessagesPanel" class="lg:col-span-3 card p-0 flex flex-col" style="height: calc(100vh - 180px);">
                         <div id="chatHeader" class="p-3 border-b flex items-center justify-between hidden">
                             <div class="flex items-center gap-3">
                                 <div class="relative">
@@ -2024,6 +2189,7 @@
     <script type="module">
     import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
         import { doc, getDoc, collection, query, where, getDocs, limit, orderBy, onSnapshot, updateDoc, addDoc, deleteDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
         import { addXP, updateGamificationHeader } from '../js/gamification.js';
         
         // Hacer funciones globales para que las funciones inline puedan usarlas
@@ -2041,6 +2207,20 @@
         window.deleteDoc = deleteDoc;
         window.serverTimestamp = serverTimestamp;
 
+        // Función para formatear tiempos relativos
+        function formatTimeAgo(date) {
+            const now = new Date();
+            const diff = Math.floor((now - date) / 1000); // diferencia en segundos
+            
+            if (diff < 60) return 'Hace un momento';
+            if (diff < 3600) return `Hace ${Math.floor(diff / 60)} minuto${Math.floor(diff / 60) > 1 ? 's' : ''}`;
+            if (diff < 86400) return `Hace ${Math.floor(diff / 3600)} hora${Math.floor(diff / 3600) > 1 ? 's' : ''}`;
+            if (diff < 604800) return `Hace ${Math.floor(diff / 86400)} día${Math.floor(diff / 86400) > 1 ? 's' : ''}`;
+            if (diff < 2592000) return `Hace ${Math.floor(diff / 604800)} semana${Math.floor(diff / 604800) > 1 ? 's' : ''}`;
+            if (diff < 31536000) return `Hace ${Math.floor(diff / 2592000)} mes${Math.floor(diff / 2592000) > 1 ? 'es' : ''}`;
+            return `Hace ${Math.floor(diff / 31536000)} año${Math.floor(diff / 31536000) > 1 ? 's' : ''}`;
+        }
+
         let currentUserData = null;
 
         // Verificar autenticación
@@ -2049,9 +2229,45 @@
                 // No redirigir aquí: deja que initAuth gestione las redirecciones para evitar expulsión temprana
                 return;
             }
+            
+            // Establecer currentUser globalmente
+            window.currentUser = user;
+            
             // Cargar datos del usuario
             await loadUserData(user.uid);
             await loadDashboardData();
+            
+            // Inicializar contadores y listeners
+            setTimeout(() => {
+                updateChatBadge();
+                updateNotificationBadge();
+                setupGlobalChatListener();
+                console.log('✅ Contadores y listeners inicializados');
+            }, 1000);
+            
+            // CARGAR CONVERSACIONES AUTOMÁTICAMENTE AL INICIAR SESIÓN
+            console.log('💬 Cargando conversaciones automáticamente...');
+            
+            // Intentar cargar inmediatamente y también después de un pequeño delay
+            const tryLoadConversations = async () => {
+                const conversationsEl = document.getElementById('chatConversations');
+                if (conversationsEl && window.loadConversations) {
+                    try {
+                        await window.loadConversations(user.uid);
+                        console.log('✅ Conversaciones cargadas exitosamente');
+                    } catch (err) {
+                        console.error('❌ Error cargando conversaciones:', err);
+                    }
+                } else {
+                    console.warn('⚠️ Elemento chatConversations no encontrado o función no disponible');
+                }
+            };
+            
+            // Intentar inmediatamente
+            tryLoadConversations();
+            
+            // Reintentar después de un delay por si el DOM no estaba listo
+            setTimeout(tryLoadConversations, 1000);
             
             // INICIALIZAR BUSCADOR SOLO CUANDO EL USUARIO ESTÉ AUTENTICADO
             console.log('✅ Usuario autenticado - habilitando búsqueda');
@@ -2389,17 +2605,97 @@
             return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
         }
 
-        function updateNotificationBadge() {
+        async function updateNotificationBadge() {
             const badge = document.getElementById('notificationBadge');
-            const unreadCount = notifications.filter(n => !n.read).length;
-            if (unreadCount > 0) {
-                badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
-                badge.classList.remove('hidden');
-            } else {
-                badge.classList.add('hidden');
+            const user = window.currentUser || window.auth?.currentUser;
+            
+            // Contar notificaciones no leídas
+            let unreadNotifications = notifications.filter(n => !n.read).length;
+            
+            // Contar tareas pendientes (nuevas tareas asignadas por el maestro)
+            let unreadTasks = 0;
+            if (user && window.db) {
+                try {
+                    const tasksRef = collection(window.db, 'tareas');
+                    const q = query(tasksRef, where('studentId', '==', user.uid), where('status', '==', 'pending'));
+                    const tasksSnapshot = await getDocs(q);
+                    unreadTasks = tasksSnapshot.size;
+                } catch (error) {
+                    console.error('Error contando tareas:', error);
+                }
             }
+            
+            const totalUnread = unreadNotifications + unreadTasks;
+            
+            // Siempre mostrar el badge
+            badge.textContent = totalUnread > 99 ? '99+' : totalUnread;
+            badge.classList.remove('hidden');
+            
             const modalCount = document.getElementById('modalNotificationCount');
-            if (modalCount) modalCount.textContent = unreadCount;
+            if (modalCount) modalCount.textContent = totalUnread;
+        }
+        
+        // Función para actualizar el badge de chat
+        async function updateChatBadge() {
+            const badge = document.getElementById('chatBadge');
+            const user = window.currentUser || window.auth?.currentUser;
+            
+            if (!user || !window.db) {
+                badge.textContent = '0';
+                badge.classList.remove('hidden');
+                return;
+            }
+            
+            try {
+                // Contar mensajes no leídos
+                const chatsRef = collection(window.db, 'chats');
+                const q = query(chatsRef, where('participants', 'array-contains', user.uid));
+                const chatsSnapshot = await getDocs(q);
+                
+                let unreadCount = 0;
+                
+                for (const chatDoc of chatsSnapshot.docs) {
+                    const chatData = chatDoc.data();
+                    const messagesRef = collection(window.db, `chats/${chatDoc.id}/messages`);
+                    const messagesQuery = query(messagesRef, where('senderId', '!=', user.uid), where('read', '==', false));
+                    const unreadMessages = await getDocs(messagesQuery);
+                    unreadCount += unreadMessages.size;
+                }
+                
+                // Siempre mostrar el badge
+                badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                badge.classList.remove('hidden');
+                
+                console.log('📬 Badge de chat actualizado:', unreadCount);
+            } catch (error) {
+                console.error('Error actualizando badge de chat:', error);
+                badge.textContent = '0';
+                badge.classList.remove('hidden');
+            }
+        }
+        
+        // Listener global para actualizar badges cuando hay cambios en chats
+        let globalChatsListener = null;
+        
+        function setupGlobalChatListener() {
+            const user = window.currentUser || window.auth?.currentUser;
+            if (!user || !window.db) return;
+            
+            try {
+                const chatsRef = collection(window.db, 'chats');
+                const q = query(chatsRef, where('participants', 'array-contains', user.uid));
+                
+                if (globalChatsListener) {
+                    globalChatsListener();
+                }
+                
+                globalChatsListener = onSnapshot(q, (snapshot) => {
+                    console.log('🔔 Cambios detectados en chats');
+                    updateChatBadge();
+                });
+            } catch (error) {
+                console.error('Error configurando listener de chats:', error);
+            }
         }
 
         function renderNotifications() {
@@ -2520,6 +2816,146 @@
                 console.error('❌ Error marcando todas como leídas:', error);
             }
         }
+
+        // Crear notificación en Firestore
+        async function createNotification(userId, type, title, description, metadata = {}) {
+            try {
+                if (!userId) {
+                    console.error('❌ createNotification: userId es requerido');
+                    return;
+                }
+
+                const notificationsRef = collection(window.db, `users/${userId}/notifications`);
+                await addDoc(notificationsRef, {
+                    type: type || 'info',
+                    title: title || 'Notificación',
+                    description: description || '',
+                    message: description || '',
+                    read: false,
+                    metadata: metadata,
+                    createdAt: serverTimestamp()
+                });
+                
+                console.log(`✅ Notificación creada para usuario ${userId}`);
+            } catch (error) {
+                console.error('❌ Error creando notificación:', error);
+            }
+        }
+
+        // Hacer la función global para que otros módulos puedan usarla
+        window.createNotification = createNotification;
+        
+        // Función para notificar cuando se agrega a un grupo
+        async function notifyGroupAddition(userId, groupName, groupId, addedBy) {
+            try {
+                await createNotification(
+                    userId,
+                    'info',
+                    `¡Te agregaron a un grupo! 🎉`,
+                    `Ahora eres parte del grupo "${groupName}"`,
+                    {
+                        groupId: groupId,
+                        addedBy: addedBy,
+                        groupName: groupName
+                    }
+                );
+                console.log(`✅ Notificación de grupo enviada a ${userId}`);
+            } catch (error) {
+                console.error('❌ Error notificando adición a grupo:', error);
+            }
+        }
+        
+        // Hacer la función global
+        window.notifyGroupAddition = notifyGroupAddition;
+        
+        // Función para notificar logros
+        async function notifyAchievement(userId, achievementTitle, achievementDescription) {
+            try {
+                await createNotification(
+                    userId,
+                    'logro',
+                    achievementTitle,
+                    achievementDescription,
+                    { type: 'achievement' }
+                );
+                console.log(`✅ Notificación de logro enviada a ${userId}`);
+            } catch (error) {
+                console.error('❌ Error notificando logro:', error);
+            }
+        }
+        
+        window.notifyAchievement = notifyAchievement;
+        
+        // FUNCIÓN DE PRUEBA: Crear notificaciones de ejemplo (solo para desarrollo)
+        async function createDemoNotifications() {
+            const user = window.auth?.currentUser;
+            if (!user) {
+                console.warn('⚠️ No hay usuario autenticado para crear notificaciones de prueba');
+                return;
+            }
+            
+            console.log('🎭 Creando notificaciones de demostración...');
+            
+            // Notificación de mensaje
+            await createNotification(
+                user.uid,
+                'mensaje',
+                'Nuevo mensaje de Ana García',
+                '¡Hola! ¿Podemos trabajar juntos en el proyecto de Python?',
+                { senderId: 'demo123', chatId: 'chat456' }
+            );
+            
+            // Notificación de grupo
+            await createNotification(
+                user.uid,
+                'info',
+                '¡Te agregaron a un grupo! 🎉',
+                'Ahora eres parte del grupo "Matemáticas Avanzadas"',
+                { groupId: 'group789', groupName: 'Matemáticas Avanzadas' }
+            );
+            
+            // Notificación de logro
+            await createNotification(
+                user.uid,
+                'logro',
+                '🏆 ¡Primer Logro Desbloqueado!',
+                'Completaste tu primera lección de programación',
+                { achievement: 'first_lesson' }
+            );
+            
+            // Notificación de tarea
+            await createNotification(
+                user.uid,
+                'tarea',
+                'Nueva tarea asignada',
+                'Completa los ejercicios de Python básico antes del viernes',
+                { taskId: 'task123', dueDate: '2025-12-06' }
+            );
+            
+            // Notificación de XP
+            await createNotification(
+                user.uid,
+                'xp',
+                '⭐ +50 XP Ganados',
+                'Completaste un ejercicio perfecto sin errores',
+                { xpGained: 50 }
+            );
+            
+            console.log('✅ Notificaciones de demostración creadas');
+            
+            // Recargar notificaciones
+            setTimeout(() => {
+                if (notificationsListener) {
+                    console.log('🔄 Recargando panel de notificaciones...');
+                    renderNotifications();
+                }
+            }, 1000);
+        }
+        
+        // Hacer función global para acceso desde consola
+        window.createDemoNotifications = createDemoNotifications;
+        
+        console.log('💡 TIP: Usa window.createDemoNotifications() en la consola para ver notificaciones de ejemplo');
 
         // Event listeners del modal de notificaciones
         document.getElementById('notificationBtn')?.addEventListener('click', () => {
@@ -3021,20 +3457,25 @@
 
         // Toggle Tema Claro/Oscuro (botón del header)
         const themeToggle = document.getElementById('themeToggle');
-        const themeIconLight = document.getElementById('themeIconLight');
-        const themeIconDark = document.getElementById('themeIconDark');
         
         // Elementos del menú de configuración - Apariencia
         const appearanceOption = document.getElementById('appearanceOption');
         const appearanceIconPath = document.getElementById('appearanceIconPath');
         const currentThemeLabel = document.getElementById('currentThemeLabel');
         
-        // Función para actualizar tema visual
+        // Función para actualizar tema visual (Homepage Design)
         function updateThemeUI(isDark) {
-            // Actualizar botón del header
-            if (themeIconLight && themeIconDark) {
-                themeIconLight.classList.toggle('hidden', isDark);
-                themeIconDark.classList.toggle('hidden', !isDark);
+            // Actualizar botón toggle del header (Homepage style)
+            if (themeToggle) {
+                if (isDark) {
+                    themeToggle.classList.remove('theme-off');
+                    themeToggle.classList.add('theme-on');
+                    themeToggle.setAttribute('aria-pressed', 'true');
+                } else {
+                    themeToggle.classList.remove('theme-on');
+                    themeToggle.classList.add('theme-off');
+                    themeToggle.setAttribute('aria-pressed', 'false');
+                }
             }
             
             // Actualizar opción de Apariencia en el menú
@@ -3420,13 +3861,10 @@
                     themePreview.style.borderColor = '#9333ea';
                     themePreview.style.boxShadow = '0 0 0 3px rgba(147, 51, 234, 0.3)';
                     
-                    // Mostrar checkmark
+                    // Mostrar mensaje "En uso"
                     if (checkmark) {
                         checkmark.classList.remove('hidden');
-                    }
-                    
-                    // Animar entrada del checkmark
-                    if (checkmark) {
+                        checkmark.innerHTML = '<span class="text-xs font-bold text-purple-700">En uso</span>';
                         checkmark.style.animation = 'checkmarkPop 0.3s ease-out';
                     }
                 } else {
@@ -3434,7 +3872,7 @@
                     themePreview.style.borderColor = 'transparent';
                     themePreview.style.boxShadow = '';
                     
-                    // Ocultar checkmark
+                    // Ocultar mensaje
                     if (checkmark) {
                         checkmark.classList.add('hidden');
                     }
@@ -3891,178 +4329,553 @@
 
         // Grupos feed
         // ========== GRUPOS - FEED SOCIAL REAL ==========
-        let postsUnsubscribe = null;
         
         async function initGrupos() {
+            console.log('👥 Inicializando sección de grupos...');
+            
             const user = window.currentUser || window.auth?.currentUser;
-            if (!user) return;
-            
-            // Obtener grupo del usuario (primer grupo al que pertenece)
-            const userDoc = await getDoc(doc(window.db, 'users', user.uid));
-            const userData = userDoc.exists() ? userDoc.data() : {};
-            const groupId = userData.groupId || 'demo_group'; // Grupo demo por defecto
-            
-            // Botones
-            document.getElementById('btnNewPost')?.addEventListener('click', () => toggleNewPostForm());
-            document.getElementById('submitPost')?.addEventListener('click', () => createPost(groupId));
-            document.getElementById('cancelPost')?.addEventListener('click', () => toggleNewPostForm());
-            document.getElementById('closeProfileModal')?.addEventListener('click', () => closeUserProfileModal());
-            
-            // Cargar posts en tiempo real
-            loadGroupFeed(groupId);
-        }
-        
-        function toggleNewPostForm() {
-            const form = document.getElementById('newPostForm');
-            form.classList.toggle('hidden');
-            if (!form.classList.contains('hidden')) {
-                document.getElementById('newPostContent').focus();
+            if (!user) {
+                console.warn('⚠️ No hay usuario autenticado');
+                return;
             }
+            
+            // Mostrar vista de lista y ocultar vista detallada
+            document.getElementById('gruposListView').classList.remove('hidden');
+            document.getElementById('grupoDetailView').classList.add('hidden');
+            document.getElementById('btnNuevoPost').classList.add('hidden');
+            
+            // Cargar grupos del estudiante
+            await loadStudentGroups();
         }
         
-        async function createPost(groupId) {
-            const content = document.getElementById('newPostContent').value.trim();
-            if (!content) return;
-            
+        async function loadStudentGroups() {
             const user = window.currentUser || window.auth?.currentUser;
-            if (!user) return;
-            
+            if (!user) {
+                console.warn('⚠️ No hay usuario autenticado');
+                return;
+            }
+
             try {
-                const postsRef = collection(window.db, 'groups', groupId, 'posts');
-                await addDoc(postsRef, {
-                    content,
-                    authorId: user.uid,
-                    createdAt: serverTimestamp(),
-                    likes: 0,
-                    commentsCount: 0
-                });
-                
-                document.getElementById('newPostContent').value = '';
-                toggleNewPostForm();
-            } catch (error) {
-                console.error('Error creando post:', error);
-                alert('Error al crear publicación');
-            }
-        }
-        
-        async function loadGroupFeed(groupId) {
-            const feed = document.getElementById('groupsFeed');
-            feed.innerHTML = '<div class="text-center text-gray-400 py-4">Cargando posts...</div>';
-            
-            // Cancelar listener anterior
-            if (postsUnsubscribe) postsUnsubscribe();
-            
-            // Escuchar posts en tiempo real
-            const postsRef = collection(window.db, 'groups', groupId, 'posts');
-            const postsQuery = query(postsRef, orderBy('createdAt', 'desc'), limit(20));
-            
-            postsUnsubscribe = onSnapshot(postsQuery, async (snapshot) => {
-                feed.innerHTML = '';
-                
-                if (snapshot.empty) {
-                    feed.innerHTML = '<div class="card p-6 text-center text-gray-400">No hay publicaciones aún. ¡Sé el primero en publicar!</div>';
+                console.log('🔍 Cargando grupos del estudiante:', user.uid);
+
+                const groupsRef = collection(window.db, 'groups');
+                const q = query(groupsRef, where('studentIds', 'array-contains', user.uid));
+                const snapshot = await getDocs(q);
+
+                console.log('📊 Grupos encontrados:', snapshot.size);
+
+                const grid = document.getElementById('studentGroupsGrid');
+                if (!grid) {
+                    console.error('❌ No se encontró el elemento studentGroupsGrid');
                     return;
                 }
-                
-                for (const postDoc of snapshot.docs) {
-                    const post = postDoc.data();
-                    
-                    // Obtener datos del autor
-                    const authorDoc = await getDoc(doc(window.db, 'users', post.authorId));
-                    const author = authorDoc.exists() ? authorDoc.data() : {};
-                    
-                    // Renderizar post
-                    const postEl = document.createElement('div');
-                    postEl.className = 'card';
-                    postEl.innerHTML = `
-                        <div class="flex items-start gap-3 mb-3">
-                            <img src="${author.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(author.displayName || 'Usuario')}&background=667eea&color=fff`}" 
-                                 class="w-10 h-10 rounded-full cursor-pointer hover:ring-2 hover:ring-indigo-300 transition"
-                                 onclick="showUserProfile('${post.authorId}')">
-                            <div class="flex-1">
-                                <div class="flex items-center gap-2">
-                                    <span class="font-semibold text-gray-800 cursor-pointer hover:text-indigo-600" onclick="showUserProfile('${post.authorId}')">${author.displayName || 'Usuario'}</span>
-                                    <span class="text-xs text-gray-400">${post.createdAt?.toDate ? new Date(post.createdAt.toDate()).toLocaleDateString('es-MX', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Ahora'}</span>
-                                </div>
-                                <p class="text-sm text-gray-700 mt-2 whitespace-pre-wrap">${post.content}</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-4 pt-3 border-t border-gray-100 text-sm text-gray-500">
-                            <button class="hover:text-indigo-600 transition flex items-center gap-1">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-                                </svg>
-                                <span>${post.likes || 0}</span>
-                            </button>
-                            <button class="hover:text-indigo-600 transition flex items-center gap-1" onclick="toggleComments('${postDoc.id}')">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                                </svg>
-                                <span>${post.commentsCount || 0}</span>
-                            </button>
-                        </div>
-                        <div id="comments-${postDoc.id}" class="hidden mt-4 pt-4 border-t border-gray-100 space-y-3">
-                            <div class="text-center text-gray-400 text-sm py-2">Cargando comentarios...</div>
+
+                grid.innerHTML = '';
+
+                if (snapshot.empty) {
+                    console.warn('⚠️ No se encontraron grupos para:', user.uid);
+                    grid.innerHTML = `
+                        <div class="text-center text-gray-400 py-12">
+                            <div class="text-6xl mb-4">📚</div>
+                            <p class="text-lg mb-2">No estás asignado a ningún grupo</p>
+                            <p class="text-sm">Tu profesor te asignará a un grupo pronto</p>
                         </div>
                     `;
-                    feed.appendChild(postEl);
+                    return;
                 }
-            });
-        }
-        
-        async function showUserProfile(userId) {
-            try {
-                const userDoc = await getDoc(doc(window.db, 'users', userId));
-                if (!userDoc.exists()) return;
-                
-                const userData = userDoc.data();
-                
-                document.getElementById('modalUserAvatar').src = userData.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.displayName || 'Usuario')}&background=667eea&color=fff`;
-                document.getElementById('modalUserName').textContent = userData.displayName || 'Usuario';
-                document.getElementById('modalUserRole').textContent = (userData.rol || 'estudiante').charAt(0).toUpperCase() + (userData.rol || 'estudiante').slice(1);
-                
-                // Botón de chat
-                const chatBtn = document.getElementById('modalChatBtn');
-                chatBtn.onclick = async () => {
-                    const currentUser = window.currentUser || window.auth?.currentUser;
-                    if (!currentUser) return;
-                    
-                    const chatId = await getOrCreateChat(currentUser.uid, userId);
-                    closeUserProfileModal();
-                    
-                    // Cambiar a sección de chats
-                    window.location.hash = 'chats';
-                    
-                    // Esperar a que se cargue la sección
-                    setTimeout(() => {
-                        openChat(chatId, {
-                            uid: userId,
-                            name: userData.displayName,
-                            photoURL: userData.photoURL,
-                            role: userData.rol
-                        });
-                    }, 300);
-                };
-                
-                document.getElementById('userProfileModal').classList.remove('hidden');
+
+                snapshot.forEach(doc => {
+                    const group = doc.data();
+                    const groupCard = createStudentGroupCard(doc.id, group);
+                    grid.insertAdjacentHTML('beforeend', groupCard);
+                });
+
+                console.log('✅ Grupos del estudiante renderizados');
+
+                // Agregar event listeners
+                grid.querySelectorAll('.student-group-card').forEach(card => {
+                    card.addEventListener('click', () => {
+                        const groupId = card.dataset.groupId;
+                        console.log('🔍 Abriendo grupo:', groupId);
+                        openStudentGroupDetail(groupId);
+                    });
+                });
             } catch (error) {
-                console.error('Error cargando perfil:', error);
+                console.error('❌ Error cargando grupos:', error);
+                const grid = document.getElementById('studentGroupsGrid');
+                if (grid) {
+                    grid.innerHTML = `
+                        <div class="text-center text-red-400 py-12">
+                            <div class="text-6xl mb-4">⚠️</div>
+                            <p class="text-lg mb-2">Error cargando grupos</p>
+                            <p class="text-sm">${error.message}</p>
+                        </div>
+                    `;
+                }
             }
         }
-        
-        function closeUserProfileModal() {
-            document.getElementById('userProfileModal').classList.add('hidden');
+
+        function createStudentGroupCard(groupId, group) {
+            const studentCount = group.studentIds?.length || 0;
+            return `
+                <div class="student-group-card bg-white rounded-xl p-6 shadow-md border-2 border-gray-100 hover:border-indigo-300 hover:shadow-xl cursor-pointer transition-all transform hover:-translate-y-1" data-group-id="${groupId}">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex-1">
+                            <h3 class="text-2xl font-bold text-gray-800 mb-2">${group.name}</h3>
+                            <p class="text-gray-600 text-base">${group.subject}</p>
+                        </div>
+                        <span class="px-4 py-2 text-sm font-bold rounded-full bg-indigo-100 text-indigo-700">
+                            ${group.level || 'Principiante'}
+                        </span>
+                    </div>
+                    <div class="space-y-2 text-gray-700">
+                        <div class="flex items-center gap-2 text-base">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"></path>
+                            </svg>
+                            <span>${group.teacherName || 'Profesor'}</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-base">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
+                            <span>${studentCount} estudiante${studentCount !== 1 ? 's' : ''}</span>
+                        </div>
+                    </div>
+                    <div class="mt-6">
+                        <button class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all transform hover:scale-105">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            Ver Grupo
+                        </button>
+                    </div>
+                </div>
+            `;
         }
-        
-        function toggleComments(postId) {
-            const commentsEl = document.getElementById(`comments-${postId}`);
-            commentsEl.classList.toggle('hidden');
-            // Aquí podrías cargar comentarios reales de Firestore
+
+        // Variable global para el grupo activo
+        let activeGroupId = null;
+        let activeGroupData = null;
+
+        async function openStudentGroupDetail(groupId) {
+            console.log('📂 Abriendo detalle del grupo:', groupId);
+            const user = window.currentUser || window.auth?.currentUser;
+            if (!user) {
+                console.warn('⚠️ No hay usuario autenticado');
+                return;
+            }
+
+            try {
+                // Obtener datos del grupo
+                const groupDoc = await getDoc(doc(window.db, 'groups', groupId));
+                if (!groupDoc.exists()) {
+                    console.error('❌ Grupo no encontrado');
+                    return;
+                }
+
+                const group = groupDoc.data();
+                activeGroupId = groupId;
+                activeGroupData = group;
+
+                // Ocultar la lista y mostrar la vista detallada
+                document.getElementById('gruposListView').classList.add('hidden');
+                document.getElementById('grupoDetailView').classList.remove('hidden');
+                document.getElementById('btnNuevoPost').classList.remove('hidden');
+
+                // Actualizar información del header
+                document.getElementById('grupoDetailNombre').textContent = group.name;
+                document.getElementById('grupoDetailMateria').textContent = group.subject;
+                document.getElementById('grupoDetailProfesor').textContent = group.teacherName || 'Profesor';
+                document.getElementById('grupoDetailEstudiantes').textContent = `${group.studentIds?.length || 0} estudiante${group.studentIds?.length !== 1 ? 's' : ''}`;
+                document.getElementById('grupoDetailBadge').textContent = group.level || 'Principiante';
+
+                // Configurar avatar del usuario
+                const userAvatar = document.getElementById('userAvatarPost');
+                if (user.photoURL) {
+                    userAvatar.src = user.photoURL;
+                } else {
+                    userAvatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'User')}&background=667eea&color=fff`;
+                }
+
+                // Cargar publicaciones del grupo
+                await loadGroupPosts(groupId);
+
+                console.log('✅ Vista detallada del grupo cargada');
+
+            } catch (error) {
+                console.error('Error abriendo detalle del grupo:', error);
+            }
         }
-        
-        // Hacer funciones globales
-        window.showUserProfile = showUserProfile;
-        window.toggleComments = toggleComments;
+
+        // Función para volver a la lista de grupos
+        document.addEventListener('DOMContentLoaded', () => {
+            const btnVolver = document.getElementById('btnVolverGrupos');
+            if (btnVolver) {
+                btnVolver.addEventListener('click', () => {
+                    document.getElementById('grupoDetailView').classList.add('hidden');
+                    document.getElementById('gruposListView').classList.remove('hidden');
+                    document.getElementById('btnNuevoPost').classList.add('hidden');
+                    activeGroupId = null;
+                    activeGroupData = null;
+                });
+            }
+        });
+
+        // Función para cargar publicaciones del grupo
+        async function loadGroupPosts(groupId) {
+            const feed = document.getElementById('grupoFeed');
+            if (!feed) return;
+
+            feed.innerHTML = '<div class="text-center text-gray-400 py-8"><p>Cargando publicaciones...</p></div>';
+
+            try {
+                const postsRef = collection(window.db, `groups/${groupId}/posts`);
+                const q = query(postsRef, orderBy('createdAt', 'desc'), limit(50));
+                const snapshot = await getDocs(q);
+
+                feed.innerHTML = '';
+
+                if (snapshot.empty) {
+                    feed.innerHTML = `
+                        <div class="text-center text-gray-400 py-12 bg-white rounded-xl shadow-md">
+                            <div class="text-5xl mb-3">📝</div>
+                            <p class="text-lg mb-2">Aún no hay publicaciones</p>
+                            <p class="text-sm">¡Sé el primero en compartir algo!</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                snapshot.forEach(doc => {
+                    const post = doc.data();
+                    feed.insertAdjacentHTML('beforeend', createPostCard(doc.id, post));
+                });
+
+                // Agregar listeners para reacciones
+                attachPostListeners();
+
+            } catch (error) {
+                console.error('Error cargando publicaciones:', error);
+                feed.innerHTML = `
+                    <div class="text-center text-red-400 py-8 bg-white rounded-xl">
+                        <p>Error cargando publicaciones</p>
+                    </div>
+                `;
+            }
+        }
+
+        function createPostCard(postId, post) {
+            const timeAgo = post.createdAt ? formatTimeAgo(post.createdAt.toDate()) : 'Hace un momento';
+            
+            return `
+                <div class="post-card bg-white rounded-xl p-6 shadow-md border border-gray-100">
+                    <div class="flex items-start gap-4 mb-4">
+                        <img src="${post.authorPhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.authorName || 'User')}&background=667eea&color=fff`}" 
+                             class="w-12 h-12 rounded-full shadow-md" alt="${post.authorName}">
+                        <div class="flex-1">
+                            <h4 class="font-bold text-gray-800">${post.authorName || 'Usuario'}</h4>
+                            <p class="text-sm text-gray-500">${timeAgo}</p>
+                        </div>
+                    </div>
+                    
+                    <p class="text-gray-700 text-base mb-4 whitespace-pre-wrap">${post.content}</p>
+                    
+                    <!-- Reacciones -->
+                    <div class="flex items-center gap-4 pt-4 border-t border-gray-100">
+                        <button class="reaction-btn flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors" data-post-id="${postId}" data-reaction="heart">
+                            <span class="text-xl">❤️</span>
+                            <span class="text-sm font-semibold text-gray-600">${post.reactions?.heart || 0}</span>
+                        </button>
+                        <button class="reaction-btn flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors" data-post-id="${postId}" data-reaction="like">
+                            <span class="text-xl">👍</span>
+                            <span class="text-sm font-semibold text-gray-600">${post.reactions?.like || 0}</span>
+                        </button>
+                        <button class="reaction-btn flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors" data-post-id="${postId}" data-reaction="laugh">
+                            <span class="text-xl">😂</span>
+                            <span class="text-sm font-semibold text-gray-600">${post.reactions?.laugh || 0}</span>
+                        </button>
+                        <button class="reaction-btn flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors" data-post-id="${postId}" data-reaction="wow">
+                            <span class="text-xl">😮</span>
+                            <span class="text-sm font-semibold text-gray-600">${post.reactions?.wow || 0}</span>
+                        </button>
+                        <button class="reaction-btn flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors" data-post-id="${postId}" data-reaction="sad">
+                            <span class="text-xl">😢</span>
+                            <span class="text-sm font-semibold text-gray-600">${post.reactions?.sad || 0}</span>
+                        </button>
+                        <button class="reaction-btn flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors" data-post-id="${postId}" data-reaction="party">
+                            <span class="text-xl">🎉</span>
+                            <span class="text-sm font-semibold text-gray-600">${post.reactions?.party || 0}</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Comentarios -->
+                    <div class="mt-4 pt-4 border-t border-gray-100">
+                        <button class="text-indigo-600 hover:text-indigo-700 text-sm font-semibold flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                            </svg>
+                            ${post.commentCount || 0} comentarios
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function attachPostListeners() {
+            document.querySelectorAll('.reaction-btn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const postId = btn.dataset.postId;
+                    const reaction = btn.dataset.reaction;
+                    await addReaction(postId, reaction);
+                });
+            });
+        }
+
+        async function addReaction(postId, reactionType) {
+            if (!activeGroupId) return;
+            
+            try {
+                const postRef = doc(window.db, `groups/${activeGroupId}/posts`, postId);
+                const postDoc = await getDoc(postRef);
+                
+                if (postDoc.exists()) {
+                    const data = postDoc.data();
+                    const reactions = data.reactions || {};
+                    reactions[reactionType] = (reactions[reactionType] || 0) + 1;
+                    
+                    await updateDoc(postRef, { reactions });
+                    
+                    // Recargar publicaciones
+                    await loadGroupPosts(activeGroupId);
+                }
+            } catch (error) {
+                console.error('Error agregando reacción:', error);
+            }
+        }
+
+        // Botón publicar
+        document.addEventListener('DOMContentLoaded', () => {
+            const btnPublicar = document.getElementById('btnPublicar');
+            const textarea = document.getElementById('postTextarea');
+            const btnNuevoPost = document.getElementById('btnNuevoPost');
+            
+            // Funcionalidad botón "Nuevo Post" - hacer scroll al textarea
+            if (btnNuevoPost && textarea) {
+                btnNuevoPost.addEventListener('click', () => {
+                    textarea.focus();
+                    textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                });
+            }
+            
+            if (btnPublicar && textarea) {
+                btnPublicar.addEventListener('click', async () => {
+                    const content = textarea.value.trim();
+                    if (!content || !activeGroupId) return;
+                    
+                    const user = window.currentUser || window.auth?.currentUser;
+                    if (!user) return;
+                    
+                    try {
+                        btnPublicar.disabled = true;
+                        btnPublicar.textContent = 'Publicando...';
+                        
+                        const postsRef = collection(window.db, `groups/${activeGroupId}/posts`);
+                        await addDoc(postsRef, {
+                            content,
+                            authorId: user.uid,
+                            authorName: user.displayName || 'Usuario',
+                            authorPhoto: user.photoURL || null,
+                            createdAt: serverTimestamp(),
+                            reactions: {
+                                heart: 0,
+                                like: 0,
+                                laugh: 0,
+                                wow: 0,
+                                sad: 0,
+                                party: 0
+                            },
+                            commentCount: 0
+                        });
+                        
+                        textarea.value = '';
+                        btnPublicar.textContent = 'Publicar';
+                        btnPublicar.disabled = false;
+                        
+                        // Recargar publicaciones
+                        await loadGroupPosts(activeGroupId);
+                        
+                        console.log('✅ Publicación creada');
+                    } catch (error) {
+                        console.error('Error publicando:', error);
+                        btnPublicar.disabled = false;
+                        btnPublicar.textContent = 'Publicar';
+                    }
+                });
+            }
+        });
+
+        async function loadTeacherInfo(teacherId) {
+            const container = document.getElementById('studentGroupTeacher');
+            if (!container) return;
+            
+            container.innerHTML = '<p class="text-white text-sm">Cargando información del maestro...</p>';
+
+            try {
+                if (!teacherId) {
+                    container.innerHTML = '<p class="text-white text-sm">No hay maestro asignado</p>';
+                    return;
+                }
+
+                const teacherDoc = await getDoc(doc(window.db, 'users', teacherId));
+                if (!teacherDoc.exists()) {
+                    container.innerHTML = '<p class="text-white text-sm">Maestro no encontrado</p>';
+                    return;
+                }
+
+                const teacher = teacherDoc.data();
+                const photoURL = teacher.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(teacher.displayName || 'Maestro')}&background=ffffff&color=667eea`;
+
+                container.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <img src="${photoURL}" alt="${teacher.displayName || 'Maestro'}" class="w-20 h-20 rounded-full border-4 border-white shadow-2xl object-cover ring-4 ring-purple-300">
+                        <div>
+                            <div class="text-white font-bold text-xl mb-1">${teacher.displayName || 'Maestro'}</div>
+                            <div class="text-white text-sm font-medium opacity-90">${teacher.email || ''}</div>
+                            <div class="mt-2 inline-flex items-center gap-1 px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-white text-xs font-semibold">
+                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                </svg>
+                                Maestro Verificado
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error cargando información del maestro:', error);
+                container.innerHTML = '<p class="text-white text-sm">Error cargando maestro</p>';
+            }
+        }
+
+        async function loadClassmates(studentIds, currentUserId) {
+            const list = document.getElementById('studentGroupClassmates');
+            if (!list) return;
+            
+            list.innerHTML = '<p class="text-gray-400 text-sm">Cargando compañeros...</p>';
+
+            try {
+                const classmates = [];
+                for (const studentId of studentIds) {
+                    const studentDoc = await getDoc(doc(window.db, 'users', studentId));
+                    if (studentDoc.exists()) {
+                        const studentData = studentDoc.data();
+                        classmates.push({
+                            id: studentId,
+                            name: studentData.displayName || 'Usuario',
+                            email: studentData.email || '',
+                            photoURL: studentData.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(studentData.displayName || 'Usuario')}&background=667eea&color=fff`,
+                            isCurrentUser: studentId === currentUserId
+                        });
+                    }
+                }
+
+                if (classmates.length === 0) {
+                    list.innerHTML = '<p style="color: var(--color-text-medium);" class="text-sm text-center py-6">No hay compañeros en este grupo</p>';
+                    return;
+                }
+
+                // Ordenar: usuario actual primero
+                classmates.sort((a, b) => {
+                    if (a.isCurrentUser) return -1;
+                    if (b.isCurrentUser) return 1;
+                    return 0;
+                });
+
+                list.innerHTML = classmates.map(classmate => `
+                    <div class="flex items-center gap-3 p-4 border-2 ${classmate.isCurrentUser ? 'border-indigo-400 bg-gradient-to-r from-indigo-50 to-purple-50 shadow-md' : 'border-gray-200 bg-white'} rounded-xl hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5">
+                        <div class="relative">
+                            <img src="${classmate.photoURL}" alt="${classmate.name}" class="w-12 h-12 rounded-full object-cover border-2 ${classmate.isCurrentUser ? 'border-indigo-400' : 'border-gray-300'} shadow-sm">
+                            ${classmate.isCurrentUser ? '<div class="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white flex items-center justify-center"><svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg></div>' : ''}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 mb-1">
+                                <div class="font-bold text-base truncate" style="color: var(--color-text-high);">${classmate.name}</div>
+                                ${classmate.isCurrentUser ? '<span class="flex-shrink-0 px-2.5 py-0.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-bold rounded-full shadow-sm">Tú</span>' : ''}
+                            </div>
+                            <div class="text-xs truncate font-medium" style="color: var(--color-text-low);">${classmate.email}</div>
+                        </div>
+                        ${!classmate.isCurrentUser ? `
+                        <button onclick="openChatWithUser('${classmate.id}')" class="flex-shrink-0 p-2.5 text-white bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105" title="Enviar mensaje">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                            </svg>
+                        </button>
+                        ` : '<div class="flex-shrink-0 px-3 py-2 text-xs font-semibold text-green-700 bg-green-50 border border-green-200 rounded-lg">En línea</div>'}
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error cargando compañeros:', error);
+                list.innerHTML = '<p class="text-red-400 text-sm">Error cargando compañeros</p>';
+            }
+        }
+
+        // Función global para abrir chat con un usuario
+        window.openChatWithUser = async function(userId) {
+            // Cerrar modal de grupos
+            document.getElementById('studentGroupDetailModal')?.classList.add('hidden');
+            
+            // Cambiar a la sección de chats
+            window.location.hash = 'chats';
+            
+            // Esperar a que se cargue la sección
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Buscar o crear chat con el usuario
+            const currentUser = window.currentUser || window.auth?.currentUser;
+            if (!currentUser) return;
+            
+            try {
+                // Buscar chat existente
+                const chatsRef = collection(window.db, 'chats');
+                const q1 = query(chatsRef, where('participants', 'array-contains', currentUser.uid));
+                const snapshot = await getDocs(q1);
+                
+                let chatId = null;
+                snapshot.forEach(doc => {
+                    const chat = doc.data();
+                    if (chat.participants.includes(userId)) {
+                        chatId = doc.id;
+                    }
+                });
+                
+                // Si no existe, crear nuevo chat
+                if (!chatId) {
+                    const newChatRef = await addDoc(collection(window.db, 'chats'), {
+                        participants: [currentUser.uid, userId],
+                        createdAt: serverTimestamp(),
+                        lastMessage: '',
+                        updatedAt: serverTimestamp()
+                    });
+                    chatId = newChatRef.id;
+                }
+                
+                // Obtener datos del otro usuario
+                const otherUserDoc = await getDoc(doc(window.db, 'users', userId));
+                const otherUser = otherUserDoc.exists() ? otherUserDoc.data() : {};
+                
+                // Abrir el chat
+                if (window.openChat) {
+                    window.openChat(chatId, {
+                        uid: userId,
+                        name: otherUser.displayName || 'Usuario',
+                        photoURL: otherUser.photoURL,
+                        role: otherUser.rol || 'estudiante'
+                    });
+                }
+            } catch (error) {
+                console.error('Error abriendo chat:', error);
+            }
+        };
 
         // ========== FUNCIONALIDAD DEL CHAT ==========
         let isRecording = false;
@@ -4073,6 +4886,22 @@
 
         // Habilitar/deshabilitar botón enviar según input
         document.addEventListener('DOMContentLoaded', () => {
+            // Event listener para badge de Racha - navegar a la sección
+            const streakBadge = document.getElementById('streakBadge');
+            if (streakBadge) {
+                streakBadge.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.location.hash = 'racha';
+                });
+            }
+            
+            // Actualizar badges periódicamente
+            setInterval(() => {
+                updateChatBadge();
+                updateNotificationBadge();
+            }, 30000); // Cada 30 segundos
+            
             const chatInput = document.getElementById('chatMessageInput');
             const sendBtn = document.getElementById('chatSendBtn');
             
@@ -4087,11 +4916,7 @@
                     }
                 });
                 
-                chatInput.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter' && !sendBtn.disabled) {
-                        sendMessage();
-                    }
-                });
+                // NOTA: El listener de Enter se configura en initChat() para evitar duplicados
             }
 
             // Botón Emojis
@@ -4128,16 +4953,167 @@
                     if (file && file.type.startsWith('image/')) {
                         console.log('📸 Imagen seleccionada:', file.name);
                         
-                        if (typeof Swal !== 'undefined') {
-                            Swal.fire({
-                                icon: 'info',
-                                title: 'Próximamente',
-                                text: 'La función de enviar imágenes estará disponible pronto',
-                                toast: true,
-                                position: 'top-end',
-                                showConfirmButton: false,
-                                timer: 3000
+                        if (!activeChat) {
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: 'Sin chat activo',
+                                    text: 'Selecciona una conversación primero',
+                                    toast: true,
+                                    position: 'top-end',
+                                    showConfirmButton: false,
+                                    timer: 2000
+                                });
+                            }
+                            photoInput.value = '';
+                            return;
+                        }
+                        
+                        // Validar tamaño (máximo 5MB)
+                        if (file.size > 5 * 1024 * 1024) {
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Imagen muy grande',
+                                    text: 'El tamaño máximo es 5MB',
+                                    toast: true,
+                                    position: 'top-end',
+                                    showConfirmButton: false,
+                                    timer: 3000
+                                });
+                            }
+                            photoInput.value = '';
+                            return;
+                        }
+                        
+                        try {
+                            const user = window.currentUser || window.auth?.currentUser;
+                            if (!user) throw new Error('Usuario no autenticado');
+                            
+                            // Verificar que window.storage esté disponible
+                            if (!window.storage) {
+                                throw new Error('Firebase Storage no está inicializado');
+                            }
+                            
+                            // Comprimir imagen primero
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({
+                                    title: 'Optimizando imagen...',
+                                    html: '<div class="text-sm text-gray-600 mt-2">Esto solo tomará un momento</div>',
+                                    allowOutsideClick: false,
+                                    timer: 30000, // Timeout de 30 segundos
+                                    didOpen: () => {
+                                        Swal.showLoading();
+                                    }
+                                });
+                            }
+                            
+                            const compressedBlob = await compressImage(file, 1920, 1080, 0.85);
+                            console.log('📦 Tamaño original:', (file.size / 1024).toFixed(2), 'KB');
+                            console.log('📦 Tamaño comprimido:', (compressedBlob.size / 1024).toFixed(2), 'KB');
+                            
+                            // Actualizar mensaje
+                            if (typeof Swal !== 'undefined') {
+                                Swal.update({
+                                    title: 'Enviando imagen...',
+                                    html: `<div class="text-sm text-gray-600 mt-2">Tamaño: ${(compressedBlob.size / 1024).toFixed(0)}KB</div>`
+                                });
+                            }
+                            
+                            // Subir imagen comprimida a Firebase Storage con timeout
+                            const uploadPromise = (async () => {
+                                const timestamp = Date.now();
+                                const fileName = `img_${timestamp}.jpg`;
+                                const storageRef = ref(window.storage, `chats/${activeChat.chatId}/${fileName}`);
+                                
+                                await uploadBytes(storageRef, compressedBlob);
+                                console.log('✅ Imagen subida a Storage');
+                                
+                                const imageUrl = await getDownloadURL(storageRef);
+                                console.log('✅ URL obtenida:', imageUrl);
+                                
+                                return imageUrl;
+                            })();
+                            
+                            // Timeout de 25 segundos para la subida
+                            const timeoutPromise = new Promise((_, reject) => 
+                                setTimeout(() => reject(new Error('Timeout: La subida tardó demasiado')), 25000)
+                            );
+                            
+                            const imageUrl = await Promise.race([uploadPromise, timeoutPromise]);
+                            
+                            // Enviar mensaje con la imagen
+                            const messagesRef = collection(window.db, 'chats', activeChat.chatId, 'messages');
+                            await addDoc(messagesRef, {
+                                senderId: user.uid,
+                                senderName: user.displayName || 'Usuario',
+                                type: 'image',
+                                imageUrl: imageUrl,
+                                text: '📷 Imagen',
+                                timestamp: serverTimestamp()
                             });
+                            
+                            // Actualizar último mensaje del chat
+                            await updateDoc(doc(window.db, 'chats', activeChat.chatId), {
+                                lastMessage: '📷 Imagen',
+                                updatedAt: serverTimestamp()
+                            });
+                            
+                            console.log('✅ Imagen enviada correctamente');
+                            
+                            if (typeof Swal !== 'undefined') {
+                                Swal.close();
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Imagen enviada',
+                                    toast: true,
+                                    position: 'top-end',
+                                    showConfirmButton: false,
+                                    timer: 2000
+                                });
+                            }
+                            
+                            // Crear notificación para el receptor
+                            if (window.createNotification && activeChat.otherUser) {
+                                await window.createNotification(
+                                    activeChat.otherUser.uid,
+                                    'message',
+                                    'Nueva imagen',
+                                    `${user.displayName || 'Alguien'} te envió una imagen`,
+                                    { chatId: activeChat.chatId, senderId: user.uid, senderName: user.displayName }
+                                );
+                            }
+                            
+                        } catch (error) {
+                            console.error('❌ Error subiendo imagen:', error);
+                            
+                            let errorMessage = 'No se pudo enviar la imagen';
+                            
+                            // Mensajes de error específicos
+                            if (error.message.includes('Timeout')) {
+                                errorMessage = 'La subida tardó demasiado. Intenta con una imagen más pequeña.';
+                            } else if (error.message.includes('Storage')) {
+                                errorMessage = 'Error de conexión. Verifica tu internet.';
+                            } else if (error.code === 'storage/unauthorized') {
+                                errorMessage = 'No tienes permisos para subir archivos.';
+                            } else if (error.code === 'storage/quota-exceeded') {
+                                errorMessage = 'Espacio de almacenamiento lleno.';
+                            }
+                            
+                            if (typeof Swal !== 'undefined') {
+                                Swal.close();
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error al enviar',
+                                    text: errorMessage,
+                                    footer: '<small>Tip: Asegúrate de tener buena conexión a internet</small>',
+                                    toast: false,
+                                    position: 'center',
+                                    showConfirmButton: true,
+                                    confirmButtonText: 'Entendido',
+                                    timer: 5000
+                                });
+                            }
                         }
                     }
                     photoInput.value = '';
@@ -4153,6 +5129,22 @@
             if (audioBtn) {
                 audioBtn.addEventListener('click', async () => {
                     if (!isRecording) {
+                        // Validar chat activo
+                        if (!activeChat) {
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: 'Sin chat activo',
+                                    text: 'Selecciona una conversación primero',
+                                    toast: true,
+                                    position: 'top-end',
+                                    showConfirmButton: false,
+                                    timer: 2000
+                                });
+                            }
+                            return;
+                        }
+                        
                         try {
                             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                             mediaRecorder = new MediaRecorder(stream);
@@ -4166,16 +5158,143 @@
                                 const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
                                 console.log('🎤 Audio grabado:', audioBlob.size, 'bytes');
                                 
-                                if (typeof Swal !== 'undefined') {
-                                    Swal.fire({
-                                        icon: 'info',
-                                        title: 'Próximamente',
-                                        text: 'La función de enviar audios estará disponible pronto',
-                                        toast: true,
-                                        position: 'top-end',
-                                        showConfirmButton: false,
-                                        timer: 3000
+                                // Validar tamaño del audio (máximo 10MB)
+                                if (audioBlob.size > 10 * 1024 * 1024) {
+                                    if (typeof Swal !== 'undefined') {
+                                        Swal.fire({
+                                            icon: 'error',
+                                            title: 'Audio muy grande',
+                                            text: 'El audio no debe superar los 10MB',
+                                            toast: true,
+                                            position: 'top-end',
+                                            showConfirmButton: false,
+                                            timer: 3000
+                                        });
+                                    }
+                                    stream.getTracks().forEach(track => track.stop());
+                                    return;
+                                }
+                                
+                                try {
+                                    const user = window.currentUser || window.auth?.currentUser;
+                                    if (!user) throw new Error('Usuario no autenticado');
+                                    
+                                    // Verificar que window.storage esté disponible
+                                    if (!window.storage) {
+                                        throw new Error('Firebase Storage no está inicializado');
+                                    }
+                                    
+                                    // Calcular duración del audio antes de subir
+                                    const duration = Math.floor((Date.now() - recordingStartTime) / 1000);
+                                    
+                                    // Mostrar loading optimizado
+                                    if (typeof Swal !== 'undefined') {
+                                        Swal.fire({
+                                            title: 'Enviando audio...',
+                                            html: `<div class="text-sm text-gray-600 mt-2">Duración: ${duration}s • Tamaño: ${(audioBlob.size / 1024).toFixed(0)}KB</div>`,
+                                            allowOutsideClick: false,
+                                            timer: 30000, // Timeout de 30 segundos
+                                            didOpen: () => {
+                                                Swal.showLoading();
+                                            }
+                                        });
+                                    }
+                                    
+                                    // Subir audio a Firebase Storage con timeout
+                                    const uploadPromise = (async () => {
+                                        const timestamp = Date.now();
+                                        const fileName = `audio_${timestamp}.webm`;
+                                        const storageRef = ref(window.storage, `chats/${activeChat.chatId}/${fileName}`);
+                                        
+                                        const uploadResult = await uploadBytes(storageRef, audioBlob);
+                                        console.log('✅ Audio subido a Storage');
+                                        
+                                        const audioUrl = await getDownloadURL(storageRef);
+                                        console.log('✅ URL obtenida:', audioUrl);
+                                        
+                                        return audioUrl;
+                                    })();
+                                    
+                                    // Timeout de 25 segundos para la subida
+                                    const timeoutPromise = new Promise((_, reject) => 
+                                        setTimeout(() => reject(new Error('Timeout: La subida tardó demasiado')), 25000)
+                                    );
+                                    
+                                    const audioUrl = await Promise.race([uploadPromise, timeoutPromise]);
+                                    
+                                    // Enviar mensaje con el audio
+                                    const messagesRef = collection(window.db, 'chats', activeChat.chatId, 'messages');
+                                    await addDoc(messagesRef, {
+                                        senderId: user.uid,
+                                        senderName: user.displayName || 'Usuario',
+                                        type: 'audio',
+                                        audioUrl: audioUrl,
+                                        audioDuration: duration,
+                                        text: '🎤 Audio',
+                                        timestamp: serverTimestamp()
                                     });
+                                    
+                                    // Actualizar último mensaje del chat
+                                    await updateDoc(doc(window.db, 'chats', activeChat.chatId), {
+                                        lastMessage: '🎤 Audio',
+                                        updatedAt: serverTimestamp()
+                                    });
+                                    
+                                    console.log('✅ Audio enviado correctamente');
+                                    
+                                    if (typeof Swal !== 'undefined') {
+                                        Swal.close();
+                                        Swal.fire({
+                                            icon: 'success',
+                                            title: 'Audio enviado',
+                                            toast: true,
+                                            position: 'top-end',
+                                            showConfirmButton: false,
+                                            timer: 2000
+                                        });
+                                    }
+                                    
+                                    // Crear notificación para el receptor
+                                    if (window.createNotification && activeChat.otherUser) {
+                                        await window.createNotification(
+                                            activeChat.otherUser.uid,
+                                            'message',
+                                            'Nuevo audio',
+                                            `${user.displayName || 'Alguien'} te envió un audio`,
+                                            { chatId: activeChat.chatId, senderId: user.uid, senderName: user.displayName }
+                                        );
+                                    }
+                                    
+                                } catch (error) {
+                                    console.error('❌ Error enviando audio:', error);
+                                    
+                                    let errorMessage = 'No se pudo enviar el audio';
+                                    
+                                    // Mensajes de error específicos
+                                    if (error.message.includes('Timeout')) {
+                                        errorMessage = 'La subida tardó demasiado. Intenta con un audio más corto.';
+                                    } else if (error.message.includes('Storage')) {
+                                        errorMessage = 'Error de conexión. Verifica tu internet.';
+                                    } else if (error.code === 'storage/unauthorized') {
+                                        errorMessage = 'No tienes permisos para subir archivos.';
+                                    } else if (error.code === 'storage/quota-exceeded') {
+                                        errorMessage = 'Espacio de almacenamiento lleno.';
+                                    }
+                                    
+                                    if (typeof Swal !== 'undefined') {
+                                        Swal.close();
+                                        Swal.fire({
+                                            icon: 'error',
+                                            title: 'Error al enviar',
+                                            text: errorMessage,
+                                            footer: '<small>Tip: Asegúrate de tener buena conexión a internet</small>',
+                                            toast: false,
+                                            position: 'center',
+                                            showConfirmButton: true,
+                                            confirmButtonText: 'Entendido',
+                                            timer: 5000
+                                        });
+                                    }
                                 }
                                 
                                 stream.getTracks().forEach(track => track.stop());
@@ -4280,19 +5399,28 @@
                 console.log('✅ Botón nuevo chat configurado');
             }
             
-            // Enviar mensaje
+            // Enviar mensaje - Solo configurar una vez con debounce
             const sendBtn = document.getElementById('chatSendBtn');
             const input = document.getElementById('chatMessageInput');
             
-            if (sendBtn) {
-                sendBtn.onclick = () => sendMessage();
+            // Verificar si ya está configurado
+            if (sendBtn && !sendBtn.dataset.chatInitialized) {
+                sendBtn.dataset.chatInitialized = 'true';
+                let sendTimeout = null;
+                sendBtn.addEventListener('click', () => {
+                    if (sendTimeout) clearTimeout(sendTimeout);
+                    sendTimeout = setTimeout(() => sendMessage(), 100);
+                });
             }
             
-            if (input) {
+            if (input && !input.dataset.chatInitialized) {
+                input.dataset.chatInitialized = 'true';
+                let enterTimeout = null;
                 input.addEventListener('keypress', (e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
-                        sendMessage();
+                        if (enterTimeout) clearTimeout(enterTimeout);
+                        enterTimeout = setTimeout(() => sendMessage(), 100);
                     }
                 });
             }
@@ -4300,7 +5428,8 @@
             console.log('✅ Chat inicializado completamente');
         }
         
-        async function loadConversations(userId) {
+        // Hacer loadConversations global para que esté disponible en cualquier momento
+        window.loadConversations = async function loadConversations(userId) {
             console.log('📋 Cargando conversaciones para:', userId);
             
             const conversationsEl = document.getElementById('chatConversations');
@@ -4385,6 +5514,9 @@
                     conversationsEl.appendChild(div);
                 });
                 
+                // Actualizar badge de chat
+                updateChatBadge();
+                
             } catch (error) {
                 console.error('Error cargando conversaciones:', error);
                 conversationsEl.innerHTML = `
@@ -4450,6 +5582,9 @@
                 
                 chatMessagesArea.innerHTML = '';
                 
+                // Actualizar badge de chat después de cargar mensajes
+                setTimeout(() => updateChatBadge(), 500);
+                
                 if (snapshot.empty) {
                     chatMessagesArea.innerHTML = `
                         <div class="flex items-center justify-center h-full">
@@ -4469,13 +5604,63 @@
                     
                     const msgDiv = document.createElement('div');
                     msgDiv.className = `flex ${isMe ? 'justify-end' : 'justify-start'} mb-3`;
-                    msgDiv.innerHTML = `
-                        <div class="chat-bubble ${isMe ? 'chat-bubble-sent' : 'chat-bubble-received'}">
-                            ${isMe ? `<button class="chat-delete-btn" onclick="deleteMessage('${msgId}')" title="Eliminar mensaje">\u{1F5D1}\uFE0F</button>` : ''}
+                    
+                    let messageContent = '';
+                    
+                    // Renderizar según el tipo de mensaje
+                    if (msg.type === 'image' && msg.imageUrl) {
+                        messageContent = `
+                            <div class="max-w-xs">
+                                <img src="${msg.imageUrl}" 
+                                     alt="Imagen compartida" 
+                                     class="rounded-lg cursor-pointer hover:opacity-90 transition"
+                                     onclick="window.open('${msg.imageUrl}', '_blank')"
+                                     style="max-height: 300px; object-fit: cover;">
+                                <p class="text-xs mt-1 ${isMe ? 'text-indigo-200' : 'text-gray-500'}">
+                                    ${msg.timestamp ? formatTime(msg.timestamp.toDate()) : 'Enviando...'}
+                                </p>
+                            </div>
+                        `;
+                    } else if (msg.type === 'audio' && msg.audioUrl) {
+                        const duration = msg.audioDuration || 0;
+                        const minutes = Math.floor(duration / 60);
+                        const seconds = duration % 60;
+                        const durationText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                        
+                        messageContent = `
+                            <div class="flex flex-col gap-2">
+                                <div class="flex items-center gap-2 bg-white bg-opacity-10 rounded-lg p-2">
+                                    <button onclick="playAudio('${msg.audioUrl}')" class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center hover:bg-opacity-30 transition">
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M8 5v14l11-7z"/>
+                                        </svg>
+                                    </button>
+                                    <div class="flex-1">
+                                        <div class="h-1 bg-white bg-opacity-20 rounded-full">
+                                            <div class="h-full bg-white rounded-full" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                    <span class="text-xs">${durationText}</span>
+                                </div>
+                                <p class="text-xs ${isMe ? 'text-indigo-200' : 'text-gray-500'}">
+                                    ${msg.timestamp ? formatTime(msg.timestamp.toDate()) : 'Enviando...'}
+                                </p>
+                            </div>
+                        `;
+                    } else {
+                        // Mensaje de texto normal
+                        messageContent = `
                             <p class="text-sm whitespace-pre-wrap break-words">${escapeHtml(msg.text)}</p>
                             <p class="text-xs mt-1 ${isMe ? 'text-indigo-200' : 'text-gray-500'}">
                                 ${msg.timestamp ? formatTime(msg.timestamp.toDate()) : 'Enviando...'}
                             </p>
+                        `;
+                    }
+                    
+                    msgDiv.innerHTML = `
+                        <div class="chat-bubble ${isMe ? 'chat-bubble-sent' : 'chat-bubble-received'}">
+                            ${isMe ? `<button class="chat-delete-btn" onclick="deleteMessage('${msgId}')" title="Eliminar mensaje">🗑️</button>` : ''}
+                            ${messageContent}
                         </div>
                     `;
                     chatMessagesArea.appendChild(msgDiv);
@@ -4512,6 +5697,59 @@
             div.textContent = text;
             return div.innerHTML;
         }
+        
+        // Función para comprimir imágenes antes de subirlas
+        async function compressImage(file, maxWidth = 1920, maxHeight = 1080, quality = 0.8) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+                        
+                        // Calcular nuevas dimensiones manteniendo aspect ratio
+                        if (width > maxWidth || height > maxHeight) {
+                            const ratio = Math.min(maxWidth / width, maxHeight / height);
+                            width = width * ratio;
+                            height = height * ratio;
+                        }
+                        
+                        canvas.width = width;
+                        canvas.height = height;
+                        
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        canvas.toBlob((blob) => {
+                            resolve(blob);
+                        }, 'image/jpeg', quality);
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+        
+        // Función global para reproducir audios
+        window.playAudio = function(audioUrl) {
+            const audio = new Audio(audioUrl);
+            audio.play().catch(error => {
+                console.error('Error reproduciendo audio:', error);
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'No se pudo reproducir el audio',
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 2000
+                    });
+                }
+            });
+        };
         
         async function sendMessage() {
             console.log('📤 Intentando enviar mensaje...');
@@ -4576,8 +5814,28 @@
                 
                 console.log('✅ Chat actualizado');
                 
+                // Crear notificación para el receptor
+                if (activeChat.otherUserId && activeChat.otherUserId !== user.uid) {
+                    const senderName = user.displayName || 'Un usuario';
+                    await createNotification(
+                        activeChat.otherUserId,
+                        'mensaje',
+                        `Nuevo mensaje de ${senderName}`,
+                        text.length > 50 ? text.substring(0, 50) + '...' : text,
+                        {
+                            chatId: activeChat.chatId,
+                            senderId: user.uid,
+                            senderName: senderName
+                        }
+                    );
+                    console.log('✅ Notificación de mensaje enviada');
+                }
+                
                 // Reemplazar estado optimista; lo real vendrá por snapshot
                 input.value = '';
+                
+                // Actualizar badge de chat después de enviar mensaje
+                setTimeout(() => updateChatBadge(), 500);
                 input.focus();
                 setTimeout(()=>{
                     const el = document.getElementById(tempId);
@@ -4597,6 +5855,7 @@
                     el.firstElementChild.classList.add('bg-red-500');
                 }
                 if (sendBtn) sendBtn.disabled = false;
+                
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({
                         icon: 'error',
@@ -4922,8 +6181,93 @@
                     streakEl.textContent = currentStreak > 0 ? `🔥 ${currentStreak}` : '0';
                 }
                 
+                // Actualizar badge de racha en el header
+                const streakBadgeEl = document.getElementById('streakDaysHeader');
+                if (streakBadgeEl) {
+                    streakBadgeEl.textContent = currentStreak;
+                }
+                
             } catch (error) {
                 console.error('Error cargando racha:', error);
+                cal.innerHTML = '<div class="col-span-7 text-center text-red-500 text-sm">Error al cargar racha</div>';
+            }
+        }
+
+        // Función para renderizar el calendario en el modal
+        async function renderStreakModalCalendar(userId) {
+            const cal = document.getElementById('streakCalendarModal');
+            const currentStreakEl = document.getElementById('currentStreakModal');
+            const maxStreakEl = document.getElementById('maxStreakModal');
+            
+            try {
+                // Obtener datos del usuario
+                const userDoc = await getDoc(doc(window.db, 'users', userId));
+                const userData = userDoc.exists() ? userDoc.data() : {};
+                const loginDates = userData.loginDates || [];
+                const loginSet = new Set(loginDates.map(d => {
+                    if (typeof d === 'string') return d;
+                    if (d?.toDate) return d.toDate().toDateString();
+                    return new Date(d).toDateString();
+                }));
+                
+                // Calcular racha actual
+                let currentStreak = 0;
+                let maxStreak = 0;
+                let tempStreak = 0;
+                const today = new Date();
+                
+                for (let i = 0; i < 365; i++) {
+                    const checkDate = new Date(today);
+                    checkDate.setDate(checkDate.getDate() - i);
+                    
+                    if (loginSet.has(checkDate.toDateString())) {
+                        tempStreak++;
+                        if (i === 0 || i === 1) currentStreak++; // Los últimos 2 días cuentan para racha actual
+                    } else {
+                        if (tempStreak > maxStreak) maxStreak = tempStreak;
+                        tempStreak = 0;
+                        if (i > 1) break; // Si hace más de 1 día que no se conecta, la racha se rompe
+                    }
+                }
+                
+                if (tempStreak > maxStreak) maxStreak = tempStreak;
+                
+                // Renderizar calendario de 14 días (2 semanas) para el modal
+                cal.innerHTML = '';
+                cal.className = 'grid grid-cols-7 gap-2';
+                
+                for (let i = 13; i >= 0; i--) {
+                    const d = new Date();
+                    d.setDate(d.getDate() - i);
+                    const ds = d.toDateString();
+                    const hasActivity = loginSet.has(ds);
+                    
+                    const div = document.createElement('div');
+                    div.className = `aspect-square rounded-lg border-2 flex flex-col items-center justify-center text-xs font-semibold transition-all hover:scale-110 cursor-pointer ${
+                        hasActivity 
+                            ? 'bg-gradient-to-br from-green-400 to-green-600 border-green-700 text-white shadow-lg' 
+                            : 'bg-gray-50 border-gray-200 text-gray-400'
+                    }`;
+                    div.title = d.toLocaleDateString('es-MX', { weekday: 'long', month: 'long', day: 'numeric' });
+                    
+                    const dayName = d.toLocaleDateString('es-MX', { weekday: 'short' }).replace('.', '').toUpperCase();
+                    const dayNum = d.getDate();
+                    
+                    div.innerHTML = `
+                        <div class="text-[10px]">${dayName}</div>
+                        <div class="text-lg font-bold">${dayNum}</div>
+                        ${hasActivity ? '<div class="text-[8px]">✓</div>' : ''}
+                    `;
+                    
+                    cal.appendChild(div);
+                }
+                
+                // Actualizar estadísticas
+                currentStreakEl.textContent = currentStreak;
+                maxStreakEl.textContent = maxStreak;
+                
+            } catch (error) {
+                console.error('Error cargando racha en modal:', error);
                 cal.innerHTML = '<div class="col-span-7 text-center text-red-500 text-sm">Error al cargar racha</div>';
             }
         }
@@ -4955,19 +6299,46 @@
             // Cargar robots de ejemplo
             loadSampleRobots();
             
+            // Cargar MiniCoder equipado en el widget del sidebar
+            loadEquippedMiniCoderWidget();
+            
             initialized['coleccion'] = true;
+        }
+        
+        function loadEquippedMiniCoderWidget() {
+            const robotsData = [
+                { id: 1, name: 'Robot Detective', image: 'Detective_1.jpg', rarity: 'comun', locked: false, equipped: false, unlockLevel: 0, description: 'Detective curioso que busca bugs en el código' },
+                { id: 2, name: 'Robot Sargento', image: 'Robot_Sargento_2.jpg', rarity: 'comun', locked: false, equipped: true, unlockLevel: 0, description: 'Disciplinado y organizado, mantiene tu código en orden' },
+                { id: 3, name: 'Robot Pintor', image: 'Lagarto_Pintor_3.jpg', rarity: 'raro', locked: false, equipped: false, unlockLevel: 0, description: 'Crea interfaces hermosas con CSS artístico' },
+                { id: 4, name: 'Robot Astronauta', image: 'Dinosaurio_Astronauta_4.jpg', rarity: 'especial', locked: true, unlockLevel: 3, description: 'Explora las galaxias del desarrollo web' },
+                { id: 5, name: 'Detective Élite', image: 'Detective_Elite_5.jpg', rarity: 'epico', locked: true, unlockLevel: 4, description: 'Versión mejorada con habilidades de debugging avanzadas' },
+                { id: 6, name: 'Sargento Mayor', image: 'Soldado_Mayor_6.jpg', rarity: 'epico', locked: true, unlockLevel: 4, description: 'Lidera proyectos completos con eficiencia militar' },
+                { id: 7, name: 'Maestro Artista', image: 'Buho_Artista_7.jpg', rarity: 'epico', locked: true, unlockLevel: 5, description: 'Domina todos los frameworks de diseño conocidos' },
+                { id: 8, name: 'Comandante Espacial', image: 'Puma_Espacial_8.jpg', rarity: 'legendario', locked: true, unlockLevel: 6, description: 'Despliega aplicaciones en cualquier plataforma' },
+                { id: 9, name: 'Fresa Reparadora', image: 'Fresa_Reparadora_9.jpg', rarity: 'legendario', locked: true, unlockLevel: 7, description: 'Encuentra y repara bugs con precisión quirúrgica' },
+                { id: 10, name: 'Sabio', image: 'Sabio_10.jpg', rarity: 'legendario', locked: true, unlockLevel: 8, description: 'Posee la sabiduría de todos los lenguajes de programación' },
+                { id: 11, name: 'Cody Reverse', image: 'Cody_Reverse_11.jpg', rarity: 'one-in-million', locked: true, unlockLevel: 10, description: 'El más raro de todos, maestro de ingeniería inversa' },
+            ];
+            
+            const equippedRobot = robotsData.find(r => r.equipped);
+            if (equippedRobot) {
+                updateEquippedMiniCoderWidget(equippedRobot);
+            }
         }
 
         function loadSampleRobots() {
             const robotsData = [
-                { id: 1, name: 'Robot Detective', emoji: '🕵️', rarity: 'comun', locked: false, equipped: false, unlockLevel: 0, description: 'Detective curioso que busca bugs en el código' },
-                { id: 2, name: 'Robot Sargento', emoji: '🏅', rarity: 'comun', locked: false, equipped: true, unlockLevel: 0, description: 'Disciplinado y organizado, mantiene tu código en orden' },
-                { id: 3, name: 'Robot Pintor', emoji: '🎨', rarity: 'raro', locked: false, equipped: false, unlockLevel: 0, description: 'Crea interfaces hermosas con CSS artístico' },
-                { id: 4, name: 'Robot Astronauta', emoji: '🚀', rarity: 'especial', locked: true, unlockLevel: 3, description: 'Explora las galaxias del desarrollo web' },
-                { id: 5, name: 'Detective Élite', emoji: '🕵️', rarity: 'epico', locked: true, unlockLevel: 4, description: 'Versión mejorada con habilidades de debugging avanzadas' },
-                { id: 6, name: 'Sargento Mayor', emoji: '🏅', rarity: 'epico', locked: true, unlockLevel: 4, description: 'Lidera proyectos completos con eficiencia militar' },
-                { id: 7, name: 'Maestro Artista', emoji: '🎨', rarity: 'epico', locked: true, unlockLevel: 5, description: 'Domina todos los frameworks de diseño conocidos' },
-                { id: 8, name: 'Comandante Espacial', emoji: '🚀', rarity: 'legendario', locked: true, unlockLevel: 6, description: 'Despliega aplicaciones en cualquier plataforma' },
+                { id: 1, name: 'Robot Detective', image: 'Detective_1.jpg', rarity: 'comun', locked: false, equipped: false, unlockLevel: 0, description: 'Detective curioso que busca bugs en el código' },
+                { id: 2, name: 'Robot Sargento', image: 'Robot_Sargento_2.jpg', rarity: 'comun', locked: false, equipped: true, unlockLevel: 0, description: 'Disciplinado y organizado, mantiene tu código en orden' },
+                { id: 3, name: 'Robot Pintor', image: 'Lagarto_Pintor_3.jpg', rarity: 'raro', locked: false, equipped: false, unlockLevel: 0, description: 'Crea interfaces hermosas con CSS artístico' },
+                { id: 4, name: 'Robot Astronauta', image: 'Dinosaurio_Astronauta_4.jpg', rarity: 'especial', locked: true, unlockLevel: 3, description: 'Explora las galaxias del desarrollo web' },
+                { id: 5, name: 'Detective Élite', image: 'Detective_Elite_5.jpg', rarity: 'epico', locked: true, unlockLevel: 4, description: 'Versión mejorada con habilidades de debugging avanzadas' },
+                { id: 6, name: 'Sargento Mayor', image: 'Soldado_Mayor_6.jpg', rarity: 'epico', locked: true, unlockLevel: 4, description: 'Lidera proyectos completos con eficiencia militar' },
+                { id: 7, name: 'Maestro Artista', image: 'Buho_Artista_7.jpg', rarity: 'epico', locked: true, unlockLevel: 5, description: 'Domina todos los frameworks de diseño conocidos' },
+                { id: 8, name: 'Comandante Espacial', image: 'Puma_Espacial_8.jpg', rarity: 'legendario', locked: true, unlockLevel: 6, description: 'Despliega aplicaciones en cualquier plataforma' },
+                { id: 9, name: 'Fresa Reparadora', image: 'Fresa_Reparadora_9.jpg', rarity: 'legendario', locked: true, unlockLevel: 7, description: 'Encuentra y repara bugs con precisión quirúrgica' },
+                { id: 10, name: 'Sabio', image: 'Sabio_10.jpg', rarity: 'legendario', locked: true, unlockLevel: 8, description: 'Posee la sabiduría de todos los lenguajes de programación' },
+                { id: 11, name: 'Cody Reverse', image: 'Cody_Reverse_11.jpg', rarity: 'one-in-million', locked: true, unlockLevel: 10, description: 'El más raro de todos, maestro de ingeniería inversa' },
             ];
 
             const grid = document.getElementById('robotsGrid');
@@ -4977,7 +6348,7 @@
                 <div class="robot-card ${robot.locked ? 'locked' : ''}" data-rarity="${robot.rarity}" data-robot-id="${robot.id}">
                     ${!robot.locked && robot.equipped ? '<div class="robot-equipped-badge">✓ EQUIPADO</div>' : ''}
                     <div class="robot-avatar">
-                        ${robot.emoji}
+                        <img src="../images/minicoders/${robot.image}" alt="${robot.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">
                     </div>
                     <h3 class="text-lg font-bold text-gray-800 mb-2">${robot.name}</h3>
                     <span class="robot-rarity-badge ${robot.rarity}">${robot.rarity.toUpperCase()}</span>
@@ -5016,7 +6387,24 @@
         }
         
         function equipRobot(robotId) {
-            // Simular equipar robot
+            // Obtener datos del robot
+            const robotsData = [
+                { id: 1, name: 'Robot Detective', image: 'Detective_1.jpg', rarity: 'comun', locked: false, equipped: false, unlockLevel: 0, description: 'Detective curioso que busca bugs en el código' },
+                { id: 2, name: 'Robot Sargento', image: 'Robot_Sargento_2.jpg', rarity: 'comun', locked: false, equipped: true, unlockLevel: 0, description: 'Disciplinado y organizado, mantiene tu código en orden' },
+                { id: 3, name: 'Robot Pintor', image: 'Lagarto_Pintor_3.jpg', rarity: 'raro', locked: false, equipped: false, unlockLevel: 0, description: 'Crea interfaces hermosas con CSS artístico' },
+                { id: 4, name: 'Robot Astronauta', image: 'Dinosaurio_Astronauta_4.jpg', rarity: 'especial', locked: true, unlockLevel: 3, description: 'Explora las galaxias del desarrollo web' },
+                { id: 5, name: 'Detective Élite', image: 'Detective_Elite_5.jpg', rarity: 'epico', locked: true, unlockLevel: 4, description: 'Versión mejorada con habilidades de debugging avanzadas' },
+                { id: 6, name: 'Sargento Mayor', image: 'Soldado_Mayor_6.jpg', rarity: 'epico', locked: true, unlockLevel: 4, description: 'Lidera proyectos completos con eficiencia militar' },
+                { id: 7, name: 'Maestro Artista', image: 'Buho_Artista_7.jpg', rarity: 'epico', locked: true, unlockLevel: 5, description: 'Domina todos los frameworks de diseño conocidos' },
+                { id: 8, name: 'Comandante Espacial', image: 'Puma_Espacial_8.jpg', rarity: 'legendario', locked: true, unlockLevel: 6, description: 'Despliega aplicaciones en cualquier plataforma' },
+                { id: 9, name: 'Fresa Reparadora', image: 'Fresa_Reparadora_9.jpg', rarity: 'legendario', locked: true, unlockLevel: 7, description: 'Encuentra y repara bugs con precisión quirúrgica' },
+                { id: 10, name: 'Sabio', image: 'Sabio_10.jpg', rarity: 'legendario', locked: true, unlockLevel: 8, description: 'Posee la sabiduría de todos los lenguajes de programación' },
+                { id: 11, name: 'Cody Reverse', image: 'Cody_Reverse_11.jpg', rarity: 'one-in-million', locked: true, unlockLevel: 10, description: 'El más raro de todos, maestro de ingeniería inversa' },
+            ];
+            
+            const robot = robotsData.find(r => r.id === robotId);
+            
+            // Actualizar botones
             const allBtns = document.querySelectorAll('.robot-equip-btn');
             allBtns.forEach(btn => {
                 btn.classList.remove('equipped');
@@ -5039,8 +6427,35 @@
                 robotCard.insertBefore(badge, robotCard.firstChild);
             }
             
+            // Actualizar widget del sidebar
+            updateEquippedMiniCoderWidget(robot);
+            
             console.log('Robot equipado:', robotId);
             // TODO: Guardar en Firestore
+        }
+        
+        function updateEquippedMiniCoderWidget(robot) {
+            const widgetCard = document.getElementById('equippedMiniCoderCard');
+            if (!widgetCard || !robot) return;
+            
+            const rarityColors = {
+                'comun': '#9ca3af',
+                'raro': '#60a5fa',
+                'especial': '#a78bfa',
+                'epico': '#c084fc',
+                'legendario': 'linear-gradient(135deg, #fbbf24, #f59e0b)',
+                'one-in-million': 'linear-gradient(135deg, #ec4899, #db2777)'
+            };
+            
+            widgetCard.innerHTML = `
+                <div class="minicoder-widget-avatar">
+                    <img src="../images/minicoders/${robot.image}" alt="${robot.name}">
+                </div>
+                <div class="minicoder-widget-name">${robot.name}</div>
+                <span class="minicoder-widget-rarity" style="background: ${rarityColors[robot.rarity]}; color: white;">
+                    ${robot.rarity.toUpperCase()}
+                </span>
+            `;
         }
 
         function filterRobots(filter) {

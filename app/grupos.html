@@ -11,10 +11,15 @@
         } catch(e) {}
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/dashboard-enhancements.css">
 </head>
-<body class="bg-gray-50">
+<body class="bg-gray-50 dark:bg-gray-900">
     <script type="module">
         import '../js/firebase-init.js';
         import { initStudentShell } from '../js/student-shell.js';
@@ -104,11 +109,11 @@
                 if (snapshot.empty) {
                     console.warn('⚠️ No se encontraron grupos para:', user.uid);
                     grid.innerHTML = `
-                        <div class="text-center text-gray-400 py-12 col-span-full">
+                        <div class="text-center text-gray-400 dark:text-gray-500 py-12 col-span-full">
                             <div class="text-6xl mb-4">📚</div>
-                            <p class="text-lg mb-2">No estás asignado a ningún grupo</p>
-                            <p class="text-sm">Tu profesor te asignará a un grupo pronto</p>
-                            <p class="text-xs text-gray-500 mt-2">UID: ${user.uid}</p>
+                            <p class="text-lg mb-2 dark:text-gray-300">No estás asignado a ningún grupo</p>
+                            <p class="text-sm dark:text-gray-400">Tu profesor te asignará a un grupo pronto</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-600 mt-2">UID: ${user.uid}</p>
                         </div>
                     `;
                     return;
@@ -134,10 +139,10 @@
                 const grid = document.getElementById('studentGroupsGrid');
                 if (grid) {
                     grid.innerHTML = `
-                        <div class="text-center text-red-400 py-12 col-span-full">
+                        <div class="text-center text-red-400 dark:text-red-500 py-12 col-span-full">
                             <div class="text-6xl mb-4">⚠️</div>
-                            <p class="text-lg mb-2">Error cargando grupos</p>
-                            <p class="text-sm">${error.message}</p>
+                            <p class="text-lg mb-2 dark:text-red-400">Error cargando grupos</p>
+                            <p class="text-sm dark:text-red-500">${error.message}</p>
                         </div>
                     `;
                 }
@@ -147,17 +152,17 @@
         function createStudentGroupCard(groupId, group) {
             const studentCount = group.studentIds?.length || 0;
             return `
-                <div class="student-group-card card hover-lift cursor-pointer transition-all" data-group-id="${groupId}">
+                <div class="student-group-card card hover-lift cursor-pointer transition-all bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700" data-group-id="${groupId}">
                     <div class="flex items-start justify-between mb-3">
                         <div class="flex-1">
-                            <h3 class="text-lg font-bold text-gray-800 mb-1">${group.name}</h3>
-                            <p class="text-sm text-gray-600">${group.subject}</p>
+                            <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-1">${group.name}</h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-300">${group.subject}</p>
                         </div>
-                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-700">
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300">
                             ${group.level}
                         </span>
                     </div>
-                    <div class="space-y-2 text-sm text-gray-600">
+                    <div class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
                         <div class="flex items-center gap-2">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
@@ -214,7 +219,7 @@
             const classmateIds = studentIds.filter(id => id !== currentUserId);
 
             if (classmateIds.length === 0) {
-                container.innerHTML = '<p class="text-gray-500 text-center py-4">No hay otros compañeros en este grupo</p>';
+                container.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-center py-4">No hay otros compañeros en este grupo</p>';
                 return;
             }
 
@@ -226,12 +231,12 @@
                     if (studentDoc.exists()) {
                         const student = studentDoc.data();
                         const studentCard = `
-                            <div class="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                            <div class="flex items-center gap-3 p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition bg-white dark:bg-gray-800">
                                 <img src="${student.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(student.displayName || 'Estudiante')}&background=667eea&color=fff`}"
                                      class="w-10 h-10 rounded-full">
                                 <div class="flex-1">
-                                    <div class="font-semibold text-gray-800">${student.displayName || student.email}</div>
-                                    <div class="text-xs text-gray-500">${student.email}</div>
+                                    <div class="font-semibold text-gray-800 dark:text-gray-100">${student.displayName || student.email}</div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">${student.email}</div>
                                 </div>
                             </div>
                         `;
@@ -249,54 +254,57 @@
 
     <main class="flex-1 md:ml-64 p-6 pt-20">
         <div class="mb-6">
-            <h1 class="text-3xl font-bold text-gray-800 mb-2">👥 Mis Grupos</h1>
-            <p class="text-gray-600">Grupos a los que has sido asignado por tus profesores</p>
+            <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">
+                <img src="../images/icons/personal.png" alt="Grupos" style="width: 32px; height: 32px; display: inline-block; vertical-align: middle; margin-right: 8px;">
+                Mis Grupos
+            </h1>
+            <p class="text-gray-600 dark:text-gray-300">Grupos a los que has sido asignado por tus profesores</p>
         </div>
 
         <!-- Grid de Grupos -->
         <div id="studentGroupsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div class="text-center text-gray-400 py-12 col-span-full">
+            <div class="text-center text-gray-400 dark:text-gray-500 py-12 col-span-full">
                 <div class="text-6xl mb-4">📚</div>
-                <p class="text-lg mb-2">Cargando tus grupos...</p>
+                <p class="text-lg mb-2 dark:text-gray-300">Cargando tus grupos...</p>
             </div>
         </div>
 
         <!-- Modal Detalle de Grupo (Estudiante) -->
         <div id="studentGroupDetailModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-            <div class="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-                <div class="sticky top-0 bg-white border-b border-gray-200 p-6">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+                <div class="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-6">
                     <div class="flex items-start justify-between">
                         <div class="flex-1">
-                            <h2 id="studentGroupDetailName" class="text-2xl font-bold text-gray-800 mb-2"></h2>
-                            <div class="flex items-center gap-4 text-sm text-gray-600">
+                            <h2 id="studentGroupDetailName" class="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2"></h2>
+                            <div class="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-300">
                                 <span id="studentGroupDetailSubject" class="font-semibold"></span>
                                 <span>•</span>
                                 <span id="studentGroupDetailLevel"></span>
                             </div>
                         </div>
-                        <button id="closeStudentGroupDetailModal" class="text-gray-400 hover:text-gray-600 text-2xl font-bold">×</button>
+                        <button id="closeStudentGroupDetailModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-2xl font-bold">×</button>
                     </div>
                 </div>
 
                 <div class="p-6 space-y-6">
                     <!-- Información del Grupo -->
                     <div>
-                        <h3 class="text-lg font-bold text-gray-800 mb-3">📋 Información</h3>
+                        <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-3">📋 Información</h3>
                         <div class="grid grid-cols-2 gap-4 text-sm">
                             <div>
-                                <span class="text-gray-500">Periodo:</span>
-                                <span id="studentGroupDetailPeriod" class="ml-2 font-semibold"></span>
+                                <span class="text-gray-500 dark:text-gray-400">Periodo:</span>
+                                <span id="studentGroupDetailPeriod" class="ml-2 font-semibold text-gray-800 dark:text-gray-200"></span>
                             </div>
                             <div>
-                                <span class="text-gray-500">Compañeros:</span>
-                                <span id="studentGroupDetailStudentCount" class="ml-2 font-semibold"></span>
+                                <span class="text-gray-500 dark:text-gray-400">Compañeros:</span>
+                                <span id="studentGroupDetailStudentCount" class="ml-2 font-semibold text-gray-800 dark:text-gray-200"></span>
                             </div>
                         </div>
                     </div>
 
                     <!-- Compañeros de Grupo -->
                     <div>
-                        <h3 class="text-lg font-bold text-gray-800 mb-3">👥 Compañeros</h3>
+                        <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-3">👥 Compañeros</h3>
                         <div id="studentGroupClassmates" class="space-y-2"></div>
                     </div>
                 </div>

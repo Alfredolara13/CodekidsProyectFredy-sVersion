@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mis Tareas - CodeKids</title>
+    <title>Mis Misiones - CodeKids</title>
     <script>
         try {
             const t = localStorage.getItem('"'"'app-theme'"'"');
@@ -496,8 +496,11 @@
                 
                 await setDoc(doc(window.db, 'tasks', currentStudentTaskId, 'submissions', user.uid), submissionData);
                 
-                // Otorgar XP por entregar
-                await addXP(50, 'Tarea entregada');
+                // Otorgar XP por entregar (usando sistema global de gamificación)
+                if (window.addXP) {
+                    await window.addXP(50, 'task_submit');
+                    console.log('✅ Sumados 50 XP por entregar tarea');
+                }
                 
                 // Enviar notificaciÃ³n al profesor
                 const taskData = currentStudentTaskData;
@@ -529,33 +532,13 @@
         }
         
         // FunciÃ³n para enviar notificaciones
-        async function sendNotification(userId, notificationData) {
-
-
+        // Función para enviar notificaciones
         async function sendNotification(userId, notificationData) {
             try {
-                await addDoc(collection(window.db, '"'"'users'"'"', userId, '"'"'notifications'"'"'), notificationData);
-                console.log('"'"' Notificación enviada a:'"'"', userId);
+                await addDoc(collection(window.db, 'users', userId, 'notifications'), notificationData);
+                console.log('📬 Notificación enviada a:', userId);
             } catch (error) {
-                console.error('"'"'Error enviando notificación:'"'"', error);
-            }
-        }
-
-        // Función para añadir XP
-        async function addXP(amount, reason) {
-            const user = window.currentUser || window.auth?.currentUser;
-            if (!user) return;
-            
-            try {
-                const userRef = doc(window.db, '"'"'users'"'"', user.uid);
-                const userDoc = await getDoc(userRef);
-                if (userDoc.exists()) {
-                    const currentXP = userDoc.data().xp || 0;
-                    await setDoc(userRef, { xp: currentXP + amount }, { merge: true });
-                    console.log(` +${amount} XP por: ${reason}`);
-                }
-            } catch (error) {
-                console.error('"'"'Error añadiendo XP:'"'"', error);
+                console.error('Error enviando notificación:', error);
             }
         }
 
@@ -564,8 +547,8 @@
 
     <main class="flex-1 md:ml-64 p-6 pt-20">
         <div class="mb-6">
-            <h1 class="text-3xl font-bold text-gray-800 mb-2"> Mis Tareas</h1>
-            <p class="text-gray-600">Tareas asignadas por tus profesores</p>
+            <h1 class="text-3xl font-bold text-gray-800 mb-2"> Mis Misiones</h1>
+            <p class="text-gray-600">Misiones asignadas por tus profesores</p>
         </div>
 
         <!-- Filtros -->
