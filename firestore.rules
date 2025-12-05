@@ -71,6 +71,13 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
     
+    // === COLECCIÓN: announcements ===
+    match /announcements/{announcementId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isTeacher();
+      allow update, delete: if isAuthenticated() && resource.data.publishedBy == request.auth.uid;
+    }
+    
     // === COLECCIÓN: groups ===
     match /groups/{groupId} {
       // Para lecturas, usar get() del documento del grupo

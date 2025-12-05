@@ -499,14 +499,24 @@
             // Unificar soporte de campos 'role' (estandar) y 'rol' (legacy/minúscula)
             const raw = userData.role || userData.rol || 'Estudiante';
             const norm = raw.toLowerCase();
+            
+            // DEBUG: Log para identificar el problema
+            console.log('🔍 DEBUG redirectUser:', {
+                userData,
+                raw,
+                norm,
+                role: userData.role,
+                rol: userData.rol
+            });
+            
             if (norm === 'admin') {
                 window.location.href = '../admin.html';
                 return;
             }
-                if (norm === 'profesor' || norm === 'teacher') {
-                    window.location.href = '../app/dashboard-profesor.html';
-                    return;
-                }
+            if (norm === 'profesor' || norm === 'teacher') {
+                window.location.href = '../app/dashboard-profesor.html';
+                return;
+            }
             // default estudiante
             window.location.href = '../app/dashboard.html';
         }

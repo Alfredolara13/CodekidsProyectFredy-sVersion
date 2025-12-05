@@ -24,7 +24,7 @@
         import '../js/firebase-init.js';
         import { initStudentShell } from '../js/student-shell.js';
         import { initAuth } from '../js/auth.js';
-        import { collection, query, where, getDocs, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { collection, query, where, getDocs, doc, getDoc, orderBy } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
         initStudentShell('grupos');
 
@@ -200,6 +200,9 @@
 
                 // Cargar compañeros
                 await loadClassmates(group.studentIds || [], user.uid);
+                
+                // Cargar archivos compartidos del grupo
+                await loadStudentGroupFiles(groupId);
 
                 // Mostrar modal
                 document.getElementById('studentGroupDetailModal').classList.remove('hidden');
@@ -246,6 +249,156 @@
                     console.error('Error cargando compañero:', error);
                 }
             }
+        }
+        
+        /**
+         * Cargar archivos compartidos del grupo para el estudiante
+         */
+        async function loadStudentGroupFiles(groupId) {
+            const container = document.getElementById('studentGroupFiles');
+            
+            if (!container) {
+                console.error('❌ Contenedor de archivos no encontrado');
+                return;
+            }
+            
+            try {
+                console.log('📁 Cargando archivos del grupo para estudiante:', groupId);
+                
+                // Query para obtener archivos del grupo
+                const q = query(
+                    collection(window.db, 'sharedFiles'),
+                    where('groupId', '==', groupId),
+                    orderBy('createdAt', 'desc')
+                );
+                
+                const snapshot = await getDocs(q);
+                console.log('📊 Archivos encontrados:', snapshot.size);
+                
+                if (snapshot.empty) {
+                    container.innerHTML = `
+                        <div class="col-span-2 text-center text-gray-400 dark:text-gray-500 py-8">
+                            <svg class="w-12 h-12 mx-auto text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+                            </svg>
+                            <p class="text-sm">No hay archivos compartidos</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = '';
+                
+                snapshot.forEach(doc => {
+                    const file = doc.data();
+                    const fileCard = createStudentFileCard(file);
+                    container.insertAdjacentHTML('beforeend', fileCard);
+                });
+                
+            } catch (error) {
+                console.error('❌ Error cargando archivos:', error);
+                container.innerHTML = `
+                    <div class="col-span-2 text-center text-red-400 py-8">
+                        <p class="text-sm">Error al cargar archivos</p>
+                        <p class="text-xs mt-1">${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        /**
+         * Crear tarjeta de archivo para vista de estudiante
+         */
+        function createStudentFileCard(file) {
+            const fileIcon = getFileIcon(file.fileType);
+            const timeAgo = file.timestamp ? formatTimeAgo(new Date(file.timestamp)) : 'Recién subido';
+            
+            return `
+                <div class="border-2 border-gray-200 dark:border-gray-700 rounded-xl p-3 hover:border-indigo-300 hover:shadow-lg transition bg-white dark:bg-gray-800">
+                    <div class="flex flex-col gap-2">
+                        <!-- Ícono del archivo -->
+                        <div class="w-10 h-10 bg-gradient-to-br ${fileIcon.gradient} rounded-lg flex items-center justify-center text-white text-xl">
+                            ${fileIcon.icon}
+                        </div>
+                        
+                        <!-- Nombre del archivo -->
+                        <div>
+                            <h4 class="font-semibold text-gray-800 dark:text-gray-100 text-sm truncate" title="${file.fileName}">
+                                ${file.fileName}
+                            </h4>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">${formatFileSize(file.fileSize)}</p>
+                        </div>
+                        
+                        <!-- Descripción (si existe) -->
+                        ${file.description ? `
+                            <p class="text-xs text-gray-600 dark:text-gray-300 line-clamp-2">${file.description}</p>
+                        ` : ''}
+                        
+                        <!-- Info del profesor y fecha -->
+                        <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 border-t dark:border-gray-700 pt-2">
+                            <img src="${file.uploaderPhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(file.uploaderName)}&background=667eea&color=fff`}" 
+                                 class="w-4 h-4 rounded-full">
+                            <span class="truncate">${file.uploaderName}</span>
+                        </div>
+                        <p class="text-xs text-gray-400 dark:text-gray-500">${timeAgo}</p>
+                        
+                        <!-- Botón de descarga -->
+                        <a href="${file.fileUrl}" target="_blank" download="${file.fileName}"
+                           class="w-full btn btn-primary text-xs py-2 flex items-center justify-center gap-1 mt-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                            </svg>
+                            Descargar
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+        
+        /**
+         * Obtener ícono según tipo de archivo
+         */
+        function getFileIcon(fileType) {
+            if (fileType.includes('pdf')) {
+                return { icon: '📄', gradient: 'from-red-500 to-red-600' };
+            } else if (fileType.includes('word') || fileType.includes('document')) {
+                return { icon: '📝', gradient: 'from-blue-500 to-blue-600' };
+            } else if (fileType.includes('excel') || fileType.includes('spreadsheet')) {
+                return { icon: '📊', gradient: 'from-green-500 to-green-600' };
+            } else if (fileType.includes('powerpoint') || fileType.includes('presentation')) {
+                return { icon: '📊', gradient: 'from-orange-500 to-orange-600' };
+            } else if (fileType.includes('zip') || fileType.includes('rar')) {
+                return { icon: '🗜️', gradient: 'from-purple-500 to-purple-600' };
+            } else if (fileType.includes('image')) {
+                return { icon: '🖼️', gradient: 'from-pink-500 to-pink-600' };
+            } else {
+                return { icon: '📎', gradient: 'from-gray-500 to-gray-600' };
+            }
+        }
+        
+        /**
+         * Formatear tamaño de archivo
+         */
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+        
+        /**
+         * Formatear tiempo transcurrido
+         */
+        function formatTimeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+            
+            if (seconds < 60) return 'Hace un momento';
+            if (seconds < 3600) return `Hace ${Math.floor(seconds / 60)} min`;
+            if (seconds < 86400) return `Hace ${Math.floor(seconds / 3600)} h`;
+            if (seconds < 604800) return `Hace ${Math.floor(seconds / 86400)} días`;
+            
+            return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
         }
 
         // Exponer funciones globales si son necesarias
@@ -306,6 +459,24 @@
                     <div>
                         <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-3">👥 Compañeros</h3>
                         <div id="studentGroupClassmates" class="space-y-2"></div>
+                    </div>
+                    
+                    <!-- Archivos Compartidos -->
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100 mb-3 flex items-center gap-2">
+                            <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+                            </svg>
+                            Archivos Compartidos
+                        </h3>
+                        <div id="studentGroupFiles" class="grid grid-cols-2 gap-3">
+                            <div class="col-span-2 text-center text-gray-400 dark:text-gray-500 py-8">
+                                <svg class="w-12 h-12 mx-auto text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+                                </svg>
+                                <p class="text-sm">Cargando archivos...</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -4835,6 +4835,14 @@
             if (!currentUser) return;
             
             try {
+                // ✅ VALIDACIÓN CRÍTICA: Verificar que el usuario objetivo existe
+                const targetUserDoc = await getDoc(doc(window.db, 'users', userId));
+                if (!targetUserDoc.exists()) {
+                    console.error(`❌ No se puede abrir chat: Usuario ${userId} no existe o fue eliminado`);
+                    alert('Este usuario ya no está disponible en la plataforma.');
+                    return;
+                }
+                
                 // Buscar chat existente
                 const chatsRef = collection(window.db, 'chats');
                 const q1 = query(chatsRef, where('participants', 'array-contains', currentUser.uid));
@@ -4859,9 +4867,8 @@
                     chatId = newChatRef.id;
                 }
                 
-                // Obtener datos del otro usuario
-                const otherUserDoc = await getDoc(doc(window.db, 'users', userId));
-                const otherUser = otherUserDoc.exists() ? otherUserDoc.data() : {};
+                // Obtener datos del otro usuario (ya validado que existe)
+                const otherUser = targetUserDoc.data();
                 
                 // Abrir el chat
                 if (window.openChat) {
@@ -4874,6 +4881,7 @@
                 }
             } catch (error) {
                 console.error('Error abriendo chat:', error);
+                alert('Error al abrir el chat. Por favor, intenta de nuevo.');
             }
         };
 
@@ -5467,6 +5475,7 @@
                 
                 conversationsEl.innerHTML = '';
                 const conversations = [];
+                let deletedUsersCount = 0;
                 
                 console.log('🔄 Procesando', snapshot.size, 'conversaciones...');
                 
@@ -5476,9 +5485,19 @@
                     
                     if (!otherUserId) continue;
                     
-                    // Obtener datos del otro usuario
+                    // ✅ PASO CRÍTICO: Validación de Existencia
+                    // Solo incluir contactos cuyo usuario existe en la base de datos
                     const otherUserDoc = await getDoc(doc(window.db, 'users', otherUserId));
-                    const otherUser = otherUserDoc.exists() ? otherUserDoc.data() : {};
+                    
+                    // ❌ FILTRO: Si el usuario NO existe, descartar esta conversación
+                    if (!otherUserDoc.exists()) {
+                        deletedUsersCount++;
+                        console.warn(`⚠️ Usuario eliminado encontrado: ${otherUserId} - Conversación filtrada`);
+                        continue; // Saltar esta conversación
+                    }
+                    
+                    // ✅ Usuario existe: obtener datos y agregar a la lista
+                    const otherUser = otherUserDoc.data();
                     
                     conversations.push({
                         chatId: chatDoc.id,
@@ -5491,6 +5510,11 @@
                         lastMessage: chatData.lastMessage || '',
                         updatedAt: chatData.updatedAt
                     });
+                }
+                
+                // Log de diagnóstico
+                if (deletedUsersCount > 0) {
+                    console.log(`🧹 Referencias huérfanas filtradas: ${deletedUsersCount} usuario(s) eliminado(s)`);
                 }
                 
                 console.log('✅ Conversaciones procesadas:', conversations.length);
@@ -7016,25 +7040,119 @@
 
             let lastAnnDoc = null;
             async function loadAnnouncements({ append=false }={}){
-                                        const feed = document.getElementById('announcementsFeed');
-                                        let qRef = query(collection(window.db,'announcements'), orderBy('createdAt','desc'), limit(10));
-                                        if (append && lastAnnDoc) qRef = query(collection(window.db,'announcements'), orderBy('createdAt','desc'), startAfter(lastAnnDoc), limit(10));
-                                        const snap = await getDocs(qRef);
-                                        if (snap.docs.length) lastAnnDoc = snap.docs[snap.docs.length-1];
-                                        const frag = document.createDocumentFragment();
-                                        snap.forEach(docSnap => { const a = docSnap.data(); const div=document.createElement('div'); div.className=`border-l-4 ${a.authorRole==='Admin'?'border-indigo-600 bg-indigo-50':'border-gray-300 bg-gray-50'} p-3 rounded`; div.innerHTML = `
-                                            <div class='flex justify-between items-start'><div><p class='font-semibold text-gray-800'>${a.title||'Anuncio'}</p><p class='text-xs text-gray-500'>Publicado por ${a.authorName||'---'} · ${formatRelative(a.createdAt)}</p></div><button data-id='${docSnap.id}' class='markRead text-xs text-indigo-600 hover:underline'>Marcar leído</button></div>
-                                            <p class='text-sm mt-2 line-clamp-3'>${a.content||''}</p>
-                                            <button data-full='${docSnap.id}' class='openAnnouncement text-xs mt-2 text-gray-700 hover:text-gray-900'>Ver completo</button>`; frag.appendChild(div); });
-                                        if (!append) feed.innerHTML=''; feed.appendChild(frag);
-                                        // Bind markRead
-                                        feed.querySelectorAll('.markRead').forEach(btn=>btn.addEventListener('click', async ()=>{
-                                            const id = btn.getAttribute('data-id');
-                                            const uid = window.auth.currentUser?.uid; if (!uid) return;
-                                            await setDoc(doc(window.db, `users/${uid}/announcementsRead/${id}`), { readAt: new Date() });
-                                            btn.textContent = 'Leído'; btn.disabled = true; btn.classList.add('opacity-60');
-                                        }));
-                                    }
+                const feed = document.getElementById('announcementsFeed');
+                const user = window.currentUser || window.auth?.currentUser;
+                
+                if (!user) {
+                    feed.innerHTML = '<p class="text-gray-500 text-sm">Inicia sesión para ver anuncios</p>';
+                    return;
+                }
+
+                try {
+                    // Primero obtener los grupos del estudiante
+                    const groupsRef = collection(window.db, 'groups');
+                    const groupsQuery = query(groupsRef, where('studentIds', 'array-contains', user.uid));
+                    const groupsSnapshot = await getDocs(groupsQuery);
+                    
+                    if (groupsSnapshot.empty) {
+                        feed.innerHTML = '<p class="text-gray-500 text-sm">No estás en ningún grupo aún</p>';
+                        return;
+                    }
+                    
+                    // Obtener IDs de todos los grupos
+                    const groupIds = groupsSnapshot.docs.map(doc => doc.id);
+                    
+                    // Cargar anuncios de esos grupos
+                    const announcementsRef = collection(window.db, 'announcements');
+                    const announcementsQuery = query(
+                        announcementsRef, 
+                        where('groupId', 'in', groupIds.slice(0, 10)) // Firestore permite máximo 10 elementos en 'in'
+                    );
+                    
+                    const announcementsSnapshot = await getDocs(announcementsQuery);
+                    
+                    if (announcementsSnapshot.empty) {
+                        feed.innerHTML = '<p class="text-gray-500 text-sm">No hay anuncios publicados</p>';
+                        return;
+                    }
+                    
+                    // Ordenar anuncios por fecha (client-side ya que no podemos usar orderBy con 'in')
+                    const announcements = [];
+                    announcementsSnapshot.forEach(doc => {
+                        announcements.push({ id: doc.id, ...doc.data() });
+                    });
+                    
+                    announcements.sort((a, b) => {
+                        const dateA = a.timestamp ? new Date(a.timestamp) : new Date(0);
+                        const dateB = b.timestamp ? new Date(b.timestamp) : new Date(0);
+                        return dateB - dateA; // Más recientes primero
+                    });
+                    
+                    // Crear el mapa de grupos para mostrar nombres
+                    const groupsMap = {};
+                    groupsSnapshot.forEach(doc => {
+                        groupsMap[doc.id] = doc.data();
+                    });
+                    
+                    // Renderizar anuncios
+                    const frag = document.createDocumentFragment();
+                    announcements.forEach(announcement => {
+                        const group = groupsMap[announcement.groupId];
+                        const typeColors = {
+                            'general': 'border-gray-400 bg-gray-50',
+                            'tarea': 'border-blue-500 bg-blue-50',
+                            'recordatorio': 'border-yellow-500 bg-yellow-50',
+                            'importante': 'border-red-500 bg-red-50'
+                        };
+                        
+                        const typeIcons = {
+                            'general': '📢',
+                            'tarea': '📝',
+                            'recordatorio': '⏰',
+                            'importante': '⚠️'
+                        };
+                        
+                        const colorClass = typeColors[announcement.type] || typeColors['general'];
+                        const icon = typeIcons[announcement.type] || typeIcons['general'];
+                        
+                        const div = document.createElement('div');
+                        div.className = `border-l-4 ${colorClass} p-4 rounded-lg shadow-sm`;
+                        div.innerHTML = `
+                            <div class='flex justify-between items-start mb-2'>
+                                <div class='flex-1'>
+                                    <div class='flex items-center gap-2 mb-1'>
+                                        <span class='text-lg'>${icon}</span>
+                                        ${announcement.title ? `<p class='font-bold text-gray-800'>${announcement.title}</p>` : ''}
+                                    </div>
+                                    <p class='text-xs text-gray-600 mb-1'>
+                                        <span class='font-semibold'>${group?.name || 'Grupo'}</span> • 
+                                        ${announcement.publisherName || 'Profesor'} • 
+                                        ${formatRelative(announcement.createdAt)}
+                                    </p>
+                                </div>
+                            </div>
+                            <p class='text-sm text-gray-700 whitespace-pre-wrap'>${announcement.content || ''}</p>
+                            ${announcement.attachments && announcement.attachments.length > 0 ? `
+                                <div class='mt-3 flex flex-wrap gap-2'>
+                                    ${announcement.attachments.map(att => `
+                                        <a href='${att.url}' target='_blank' class='text-xs px-3 py-1 bg-white border border-gray-300 rounded-full hover:bg-gray-50 flex items-center gap-1'>
+                                            📎 ${att.name}
+                                        </a>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                        `;
+                        frag.appendChild(div);
+                    });
+                    
+                    if (!append) feed.innerHTML = '';
+                    feed.appendChild(frag);
+                    
+                } catch (error) {
+                    console.error('❌ Error cargando anuncios:', error);
+                    feed.innerHTML = '<p class="text-red-500 text-sm">Error cargando anuncios</p>';
+                }
+            }
 
                         async function loadContinueLearning(userData, user = null){
                             const el = document.getElementById('continueLearning');
